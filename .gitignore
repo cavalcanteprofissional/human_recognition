@@ -1,0 +1,29 @@
+# Poetry
+poetry.lock
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+env/
+venv/
+.env
+*.egg-info/
+dist/
+build/
+
+# Data
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Models
+models/*.pkl
+!models/.gitkeep
+
+# IDE
+.vscode/
+.ipynb_checkpoints/
