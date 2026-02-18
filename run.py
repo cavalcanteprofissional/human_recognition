@@ -38,11 +38,17 @@ def main():
                        help='Treinar modelo')
     parser.add_argument('--detect', action='store_true', 
                        help='Executar detecção em tempo real (terminal)')
-    parser.add_argument('--dashboard', action='store_true',
-                       help='Executar dashboard Streamlit')
     parser.add_argument('--filter', type=str, default='cartoon',
                        choices=['cartoon', 'edges', 'colormap', 'stylized', 'pencil', 'none'],
                        help='Filtro a ser aplicado (padrão: cartoon)')
+    parser.add_argument('--source', type=str, default='webcam',
+                       choices=['webcam', 'yoosee'],
+                       help='Fonte de vídeo (padrão: webcam)')
+    parser.add_argument('--yoosee-ip', type=str, default=None,
+                       help='IP da câmera Yoosee')
+    parser.add_argument('--yoosee-stream', type=str, default='onvif1',
+                       choices=['onvif1', 'onvif2', 'live', 'stream11', 'h264'],
+                       help='Stream da Yoosee (padrão: onvif1)')
     parser.add_argument('--analyze', type=str,
                        help='Analisar resultados de treinamento (caminho do JSON)')
     parser.add_argument('--compare-filters', action='store_true',
@@ -59,7 +65,12 @@ def main():
     if args.detect:
         from src.real_time_detector import HumanDetector
         detector = HumanDetector()
-        detector.run(filter_type=args.filter)
+        detector.run(
+            filter_type=args.filter,
+            source=args.source,
+            yoosee_ip=args.yoosee_ip,
+            yoosee_stream=args.yoosee_stream
+        )
     
     if args.dashboard:
         run_dashboard()

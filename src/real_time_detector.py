@@ -8,6 +8,7 @@ import time
 
 from src.feature_extractor import LBPFeatureExtractor
 from src.config import MODELS_DIR, TARGET_SIZE
+from src.yoosee_camera import YooseeCamera
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -153,34 +154,79 @@ class HumanDetector:
             self.last_time = current_time
             self.frame_count = 0
     
-    def run(self, filter_type: str = 'cartoon'):
+    def run(self, filter_type: str = 'cartoon', source: str = 'webcam',
+            yoosee_ip: str = None, yoosee_user: str = None, 
+            yoosee_password: str = None, yoosee_stream: str = "onvif1"):
         """
         Executa o detector em tempo real.
         
         Args:
             filter_type: Tipo de filtro a aplicar
+            source: Fonte de vídeo ('webcam' ou 'yoosee')
+            yoosee_ip: IP da câmera Yoosee (se source='yoosee')
+            yoosee_user: Usuário da câmera Yoosee
+            yoosee_password: Senha da câmera Yoosee
+            yoosee_stream: Stream da câmera ('onvif1', 'onvif2', etc.)
         """
-        logger.info(f"Iniciando captura com filtro: {filter_type}")
+        logger.info(f"Iniciando captura com filtro: {filter_type}, fonte: {source}")
         logger.info("Pressione 'q' para sair")
         logger.info("Pressione 'f' para trocar filtro")
         
-        # Iniciar webcam
-        cap = cv2.VideoCapture(0)
+        cap = None
+        yoosee_cam = None
         
-        if not cap.isOpened():
-            logger.error("Erro ao abrir webcam")
-            return
-        
-        # Configurar resolução
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        if source == 'yoosee':
+            from src.config import YOOSEE_CONFIG
+            yoosee_ip = yoosee_ip or YOOSEE_CONFIG.get('ip')
+            yoosee_user = yoosee_user or YOOSEE_CONFIG.get('username', 'admin')
+            yoosee_password = yoosee_password or YOOSEE_CONFIG.get('password', '')
+            
+            logger.info(f"Conectando à câmera Yoosee: {yoosee_ip}")
+            yoosee_cam = YooseeCamera(
+                ip=yoosee_ip,
+                username=yoosee_user,
+                password=yoosee_password,
+                stream_type=yoosee_stream
+            )
+            
+            if not yoosee_cam.connect():
+                logger.error("Falha ao conectar à câmera Yoosee")
+                return
+            
+            yoosee_cam.start_streaming()
+            source_label = "YOOSEE"
+        else:
+            cap = cv2.VideoCapture(0)
+            source_label = "WEBCAM"
+            
+            if not cap.isOpened():
+                logger.error("Erro ao abrir webcam")
+                return
+            
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+            source_label = "WEBCAM"
         
         filter_options = ['cartoon', 'edges', 'colormap', 'stylized', 'pencil', 'none']
         filter_idx = 0
         
         while True:
-            ret, frame = cap.read()
-            if not ret:
+            # Ler frame da fonte apropriada
+            if source == 'yoosee' and yoosee_cam:
+                frame = yoosee_cam.get_frame()
+                if frame is None:
+                    ret, frame = yoosee_cam.read_frame()
+                else:
+                    ret = frame is not None
+            else:
+                ret, frame = cap.read()
+            
+            if not ret or frame is None:
+                if source == 'yoosee':
+                    logger.warning("Tentando reconectar...")
+                    if yoosee_cam.reconnect():
+                        yoosee_cam.start_streaming()
+                        continue
                 break
             
             # Pré-processar para detecção
@@ -233,7 +279,11 @@ class HumanDetector:
                 filter_idx = (filter_idx + 1) % len(filter_options)
                 logger.info(f"Filtro alterado para: {filter_options[filter_idx]}")
         
-        cap.release()
+        if source == 'yoosee' and yoosee_cam:
+            yoosee_cam.disconnect()
+        elif cap:
+            cap.release()
+        
         cv2.destroyAllWindows()
         logger.info("Detector encerrado.")
 

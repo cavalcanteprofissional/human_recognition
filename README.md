@@ -1,240 +1,376 @@
-# Human Recognition Project
+👤 Human Recognition Project
+<p align="center"> <img src="https://raw.githubusercontent.com/opencv/opencv/master/doc/opencv-logo.png" width="300" alt="OpenCV Logo"/> </p><p align="center"> <strong>Projeto de Visão Computacional para reconhecimento de silhueta humana em tempo real</strong> </p><p align="center"> <img src="https://img.shields.io/badge/Python-3.9+-blue.svg" alt="Python Version"/> <img src="https://img.shields.io/badge/OpenCV-4.8+-green.svg" alt="OpenCV"/> <img src="https://img.shields.io/badge/Streamlit-1.28+-red.svg" alt="Streamlit"/> <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License"/> </p>
+📋 Sobre o Projeto
+Este projeto implementa um sistema completo de reconhecimento de silhueta humana utilizando técnicas clássicas de Visão Computacional e Machine Learning. O sistema é capaz de:
 
-Projeto de Visão Computacional para reconhecimento de silhueta humana em tempo real utilizando LBP (Local Binary Patterns) e Random Forest.
+Treinar um classificador Random Forest do zero usando características LBP (Local Binary Patterns)
 
-## 🚀 Configuração Rápida
+Detectar presença humana em tempo real via webcam ou câmera IP Yoosee
 
-### Pré-requisitos
-- Python 3.9+
-- Poetry
-- Webcam
+Aplicar 6 filtros criativos diferentes para visualização estilizada
 
-### Instalação
+Visualizar métricas e resultados em um dashboard interativo com Streamlit
 
-1. Clone o repositório:
-```bash
-git clone <seu-repositorio>
+🎯 Objetivos Acadêmicos
+Este projeto foi desenvolvido como Trabalho Final para a disciplina de Processamento de Imagem e Visão Computacional, atendendo aos seguintes requisitos:
+
+✅ Implementação de algoritmo do zero (não usar soluções prontas)
+
+✅ Dataset público e bem documentado
+
+✅ Extração manual de características (LBP)
+
+✅ Treinamento com variação de hiperparâmetros
+
+✅ Aplicação em tempo real com webcam/câmera IP
+
+✅ Dashboard interativo com métricas e visualizações
+
+✅ Documentação completa do pipeline
+
+🚀 Começando
+Pré-requisitos
+Python 3.9+
+
+Poetry (gerenciador de dependências)
+
+Webcam ou Câmera IP Yoosee
+
+Conta no Kaggle (para download do dataset)
+
+Instalação
+Clone o repositório:
+
+bash
+git clone https://github.com/seu-usuario/human_recognition.git
 cd human_recognition
 Instale as dependências com Poetry:
 
 bash
 poetry install
-Configure as credenciais do Kaggle no arquivo .env:
-
-env
-KAGGLE_USERNAME=cavalcantesantos
-KAGGLE_KEY=ae9786f4a28869eeef14490073738a3c
 Ative o ambiente virtual:
 
 bash
 poetry shell
-📦 Comandos
-Setup Inicial
-Baixa e prepara o dataset:
+Configure as variáveis de ambiente:
 
-bash
-python run.py --setup
-Treinamento
-Treina o modelo com busca de hiperparâmetros:
+Crie um arquivo .env na raiz do projeto:
 
-bash
-python run.py --train
-Dashboard Interativo (Recomendado)
-Executa o dashboard Streamlit com todas as funcionalidades:
+env
+# Credenciais Kaggle (obrigatório para download do dataset)
+KAGGLE_USERNAME=seu_usuario_kaggle
+KAGGLE_KEY=sua_chave_kaggle
 
-bash
-# Via run.py
-python run.py --dashboard
-
-# Ou diretamente
-python run_dashboard.py
-O dashboard estará disponível em: http://localhost:8501
-
-Detecção em Tempo Real (Terminal)
-Executa o detector com diferentes filtros:
-
-bash
-# Com filtro cartoon (padrão)
-python run.py --detect
-
-# Com filtro específico
-python run.py --detect --filter edges
-python run.py --detect --filter colormap
-python run.py --detect --filter stylized
-python run.py --detect --filter pencil
-python run.py --detect --filter none
-Análise
-Visualiza resultados do treinamento:
-
-bash
-python run.py --analyze reports/results_20240101_120000.json
-Compara todos os filtros:
-
-bash
-python run.py --compare-filters
-📊 Dashboard Interativo
-O dashboard Streamlit oferece 5 abas principais:
-
-1. Visão Geral
-Pipeline completo do projeto
-
-Explicação didática do LBP
-
-Cards com informações principais
-
-2. Treinamento
-Configuração de parâmetros
-
-Visualização dos resultados da busca em grade
-
-Heatmap interativo de parâmetros
-
-Top 10 configurações
-
-3. Detecção em Tempo Real
-Transmissão ao vivo da webcam
-
-Seleção de filtros em tempo real
-
-Métricas atualizadas (classe, confiança)
-
-Histórico das últimas detecções
-
-4. Análise de Métricas
-Gráfico de radar com todas as métricas
-
-Matriz de confusão interativa
-
-Curvas de aprendizado
-
-Comparação de parâmetros
-
-5. Sobre o Projeto
-Descrição detalhada
-
-Informações do dataset
-
-Explicação completa do LBP
-
-Galeria de filtros
-
-🎨 Filtros Disponíveis
-cartoon: Efeito cartoon com bordas suaves
-
-edges: Detecção de bordas coloridas
-
-colormap: Mapas de cor criativos (OCEAN, JET, etc.)
-
-stylized: Efeito artístico estilizado
-
-pencil: Efeito de desenho a lápis
-
-none: Sem filtro
-
-📁 Estrutura do Projeto
+# Configurações da Câmera Yoosee (opcional)
+YOOSEE_IP=192.168.1.100
+YOOSEE_PORT=554
+YOOSEE_USERNAME=admin
+YOOSEE_PASSWORD=sua_senha
+YOOSEE_STREAM=onvif1
+📦 Estrutura do Projeto
 text
 human_recognition/
-├── data/               # Dados brutos e processados
-├── models/             # Modelos treinados
-├── reports/            # Relatórios e figuras
-├── src/                # Código fonte
-│   ├── config.py       # Configurações
-│   ├── data_loader.py  # Carregamento de dados
-│   ├── feature_extractor.py  # Extração LBP
-│   ├── train.py        # Treinamento
-│   ├── real_time_detector.py # Detecção em tempo real
-│   ├── dashboard.py    # Dashboard Streamlit
-│   └── utils.py        # Utilitários
-├── .env                # Credenciais
-├── pyproject.toml      # Dependências
-├── run.py              # Script principal
-└── run_dashboard.py    # Script do dashboard
-📊 Métricas
-O projeto calcula as seguintes métricas:
+├── .env                      # Variáveis de ambiente
+├── .gitignore                 # Arquivos ignorados pelo git
+├── pyproject.toml             # Dependências do Poetry
+├── README.md                  # Este arquivo
+├── run.py                     # Script principal
+├── run_dashboard.py           # Script do dashboard
+│
+├── data/                      # Dados do projeto
+│   ├── raw/                   # Dataset original
+│   └── processed/             # Dados processados
+│
+├── models/                     # Modelos treinados
+│   └── .gitkeep
+│
+├── reports/                    # Relatórios e figuras
+│   └── figures/                # Figuras geradas
+│
+├── src/                        # Código fonte
+│   ├── __init__.py
+│   ├── config.py               # Configurações
+│   ├── data_loader.py          # Carregamento do dataset
+│   ├── feature_extractor.py    # Extração LBP
+│   ├── train.py                # Treinamento do modelo
+│   ├── real_time_detector.py   # Detecção em tempo real
+│   ├── yoosee_camera.py        # Integração com câmera Yoosee
+│   ├── dashboard.py            # Dashboard Streamlit
+│   └── utils.py                # Utilitários
+│
+└── tools/                       # Ferramentas auxiliares
+    └── find_yoosee_ip.py        # Scanner para encontrar câmera Yoosee
+🎯 Funcionalidades
+1. Pipeline de Machine Learning
+Dataset: Human Detection Dataset (Kaggle) com 921 imagens 256x256
 
-Acurácia: (VP + VN) / (VP + VN + FP + FN)
+Extração de características: LBP (Local Binary Patterns) com 59 features
 
-Precisão: VP / (VP + FP)
+Classificador: Random Forest com grid search de hiperparâmetros
 
-Revocação (Recall): VP / (VP + FN)
+Métricas: Acurácia, Precisão, Recall, F1-Score, Matriz de Confusão
 
-F1-Score: 2 * (Precisão * Recall) / (Precisão + Recall)
+2. Detecção em Tempo Real
+Webcam local: Suporte nativo via OpenCV
 
-Matriz de Confusão: VP, VN, FP, FN
+Câmera Yoosee: Integração via RTSP/ONVIF com reconexão automática
 
+Baixa latência: Streaming otimizado para tempo real
+
+3. Filtros Criativos
+Filtro	Descrição	Exemplo
+cartoon	Efeito cartoon com bordas suaves	Desenho animado
+edges	Detecção de bordas coloridas (Canny)	Contornos destacados
+colormap	Mapas de cor criativos (OCEAN, JET)	Efeito térmico
+stylized	Efeito artístico estilizado	Pintura
+pencil	Efeito de desenho a lápis	Sketch
+none	Sem filtro	Imagem original
+4. Dashboard Interativo
+📊 Visão Geral: Pipeline completo e explicação do LBP
+
+🤖 Treinamento: Configuração de parâmetros e grid search
+
+🎥 Detecção em Tempo Real: Transmissão ao vivo com estatísticas
+
+📈 Análise de Métricas: Gráficos interativos e matriz de confusão
+
+ℹ️ Sobre: Documentação detalhada do projeto
+
+📊 Dataset
+Human Detection Dataset
+Fonte: Kaggle - Human Detection Dataset
+
+Características:
+
+Total de imagens: 921
+
+Resolução: 256x256 pixels
+
+Formato: PNG
+
+Classes:
+
+1: Com presença humana
+
+0: Sem presença humana
+
+Divisão dos dados:
+
+Treino: 70% (≈645 imagens)
+
+Validação: 10% (≈92 imagens)
+
+Teste: 20% (≈184 imagens)
+
+🧠 Algoritmos e Técnicas
+Local Binary Patterns (LBP)
+O LBP é um descritor de textura local que se tornou popular devido à sua eficiência computacional e robustez a variações de iluminação.
+
+Princípio de funcionamento:
+
+Para cada pixel, compara com seus 8 vizinhos em um círculo de raio R
+
+Se vizinho ≥ pixel central → 1, senão → 0
+
+Gera um número binário de 8 bits
+
+Histograma dos padrões forma o vetor de características
+
+Parâmetros utilizados:
+
+Radius: 1
+
+N_points: 8
+
+Method: 'uniform' (reduz para 59 features)
+
+Random Forest
+Classificador ensemble que combina múltiplas árvores de decisão.
+
+Hiperparâmetros testados:
+
+n_estimators: [10, 50, 100, 200]
+
+max_depth: [5, 10, 15, None]
+
+min_samples_split: [2, 5, 10]
+
+min_samples_leaf: [1, 2, 4]
+
+📈 Métricas de Avaliação
+Métrica	Fórmula	Descrição
+Acurácia	(VP + VN) / (VP + VN + FP + FN)	Proporção de acertos totais
+Precisão	VP / (VP + FP)	Proporção de positivos corretos
+Recall	VP / (VP + FN)	Capacidade de encontrar todos os positivos
+F1-Score	2 * (Precisão * Recall) / (Precisão + Recall)	Média harmônica entre precisão e recall
 Onde:
 
-VP = Verdadeiros Positivos (humano detectado corretamente)
+VP: Verdadeiros Positivos (humano detectado corretamente)
 
-VN = Verdadeiros Negativos (não humano detectado corretamente)
+VN: Verdadeiros Negativos (não humano detectado corretamente)
 
-FP = Falsos Positivos (falso alarme)
+FP: Falsos Positivos (falso alarme)
 
-FN = Falsos Negativos (humano não detectado)
+FN: Falsos Negativos (humano não detectado)
 
-🎯 Funcionalidades do Dashboard
-Visualizações Interativas
-Heatmaps interativos para correlação de parâmetros
-
-Gráficos de radar para comparação de métricas
-
-Matriz de confusão com Plotly
-
-Curvas de aprendizado dinâmicas
-
-Detecção em Tempo Real
-Transmissão ao vivo com baixa latência
-
-Troca de filtros em tempo real
-
-Estatísticas atualizadas automaticamente
-
-Histórico de detecções
-
-Análise de Modelos
-Comparação de múltiplos modelos
-
-Visualização de hiperparâmetros
-
-Exportação de resultados
-
-📝 Licença
-Este projeto é para fins educacionais.
-
-text
-
-## Como Executar o Dashboard
-
-1. **Ative o ambiente:**
-```bash
-poetry shell
-Execute o dashboard:
-
+🎮 Como Usar
+1. Setup Inicial (baixar e preparar dados)
 bash
-# Opção 1: Via run.py
-python run.py --dashboard
+poetry run python run.py --setup
+2. Treinar Modelo
+bash
+poetry run python run.py --train
+3. Executar Dashboard Interativo (recomendado)
+bash
+# Via run.py
+poetry run python run.py --dashboard
 
-# Opção 2: Script dedicado
-python run_dashboard.py
-Acesse no navegador:
+# Ou diretamente
+poetry run python run_dashboard.py
+Acesse: http://localhost:8501
 
-text
-http://localhost:8501
-Características do Dashboard
-O dashboard Streamlit oferece:
+4. Detecção em Tempo Real (Terminal)
+bash
+# Com webcam e filtro cartoon (padrão)
+poetry run python run.py --detect
 
-Interface moderna e responsiva com CSS personalizado
+# Com filtro específico
+poetry run python run.py --detect --filter edges
+poetry run python run.py --detect --filter colormap
+poetry run python run.py --detect --filter stylized
+poetry run python run.py --detect --filter pencil
+poetry run python run.py --detect --filter none
+5. Análise de Resultados
+bash
+# Analisar resultados de treinamento específicos
+poetry run python run.py --analyze reports/results_20240101_120000.json
 
-Visualizações interativas com Plotly
+# Comparar todos os filtros
+poetry run python run.py --compare-filters
+📹 Integração com Câmera Yoosee
+Encontrar a Câmera na Rede
+bash
+poetry run python tools/find_yoosee_ip.py
+Endpoints RTSP Suportados
+rtsp://usuario:senha@ip:554/onvif1 (stream principal)
 
-Detecção em tempo real integrada
+rtsp://usuario:senha@ip:554/onvif2 (sub-stream)
 
-Métricas atualizadas automaticamente
+rtsp://usuario:senha@ip:554/live.sdp
 
-Seleção de modelos treinados
+rtsp://usuario:senha@ip:554/11
 
-Configuração de parâmetros em tempo real
+rtsp://usuario:senha@ip:554/h264
 
-Histórico de detecções com DataFrame
+Uso no Dashboard
+Selecione "Câmera Yoosee (IP)" na barra lateral
 
-Explicações didáticas do LBP e do pipeline
+Configure IP, usuário e senha
+
+Clique em "Conectar Yoosee"
+
+Inicie a detecção normalmente
+
+🎨 Galeria de Filtros
+O projeto oferece 6 filtros criativos que podem ser aplicados em tempo real:
+
+Cartoon: Efeito de desenho animado com bordas suaves
+
+Edges: Detecção de bordas coloridas (Canny)
+
+Colormap: Mapas de cor (OCEAN, JET, etc.)
+
+Stylized: Efeito artístico estilizado
+
+Pencil: Efeito de desenho a lápis
+
+None: Imagem original sem filtro
+
+📊 Resultados Esperados
+Métricas de Referência
+Acurácia: > 85%
+
+Precisão: > 80%
+
+Recall: > 80%
+
+F1-Score: > 80%
+
+Performance em Tempo Real
+Webcam: ~30 FPS
+
+Yoosee (Wi-Fi): ~15-20 FPS
+
+Latência: < 100ms
+
+🔧 Solução de Problemas
+Dataset não baixa
+bash
+# Verifique as credenciais do Kaggle no .env
+# Tente baixar manualmente do site e colocar em data/raw/
+Câmera Yoosee não conecta
+bash
+# 1. Teste o IP com ping
+ping 192.168.1.100
+
+# 2. Use o scanner de rede
+poetry run python tools/find_yoosee_ip.py
+
+# 3. Teste diferentes streams no dashboard
+Dashboard lento
+Reduza a resolução da câmera
+
+Feche outras aplicações
+
+Use sub-stream da Yoosee (onvif2)
+
+📝 Relatório Acadêmico
+O projeto inclui documentação completa para o relatório:
+
+Introdução: Problema de visão computacional escolhido
+
+Metodologia: Fluxo completo da solução
+
+Dataset: Fonte, divisão e características
+
+Algoritmos: Explicação detalhada do LBP e Random Forest
+
+Experimentos: Variação de hiperparâmetros e resultados
+
+Métricas: Equações e análise de desempenho
+
+Implementação: Detalhes técnicos e código
+
+Resultados: Demonstração em tempo real
+
+Conclusão: Análise crítica e trabalhos futuros
+
+🤝 Contribuições
+Contribuições são bem-vindas! Siga os passos:
+
+Fork o projeto
+
+Crie sua feature branch (git checkout -b feature/AmazingFeature)
+
+Commit suas mudanças (git commit -m 'Add some AmazingFeature')
+
+Push para a branch (git push origin feature/AmazingFeature)
+
+Abra um Pull Request
+
+📄 Licença
+Este projeto é para fins educacionais. Distribuído sob a licença MIT.
+
+✨ Autores
+Seu Nome - Desenvolvimento e Documentação - @seu-github
+
+🙏 Agradecimentos
+Professor da disciplina de Processamento de Imagem e Visão Computacional
+
+Comunidade OpenCV e scikit-learn
+
+Kagle pelo dataset público
+
+Documentação da Yoosee e contribuições da comunidade
+
+<p align="center"> Desenvolvido com ❤️ para disciplina de Visão Computacional </p><p align="center"> <strong>🎥 Demonstração em Vídeo:</strong> <a href="#">Link para vídeo</a> </p> ```

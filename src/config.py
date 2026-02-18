@@ -47,3 +47,58 @@ RF_CONFIG = {
     "min_samples_split": [2, 5, 10],
     "min_samples_leaf": [1, 2, 4]
 }
+
+# ============================================
+# CONFIGURAÇÕES DA CÂMERA YOOSEE
+# ============================================
+
+# Configurações da câmera Yoosee (carregadas do .env)
+YOOSEE_CONFIG = {
+    "ip": os.getenv("YOOSEE_IP", "192.168.1.100"),  # IP da câmera
+    "port": int(os.getenv("YOOSEE_PORT", "554")),   # Porta RTSP (padrão 554)
+    "username": os.getenv("YOOSEE_USERNAME", "admin"),  # Usuário
+    "password": os.getenv("YOOSEE_PASSWORD", ""),   # Senha
+    "stream": os.getenv("YOOSEE_STREAM", "onvif1")  # onvif1 (principal) ou onvif2 (sub)
+}
+
+# URLs RTSP pré-configuradas para diferentes modelos Yoosee [citation:3][citation:5]
+YOOSEE_RTSP_PATHS = {
+    "onvif1": "/onvif1",           # Mais comum [citation:1]
+    "onvif2": "/onvif2",           # Sub-stream
+    "live": "/live.sdp",            # Para modelos J1080P
+    "stream11": "/11",              # Para alguns modelos
+    "h264": "/h264",                 # Stream H.264
+    "user_pass": "/user=[USERNAME]&password=[PASSWORD]&channel=1&stream=0.sdp?"  # Formato alternativo
+}
+
+def get_yoosee_rtsp_url(stream_type="onvif1", custom_path=None):
+    """
+    Gera a URL RTSP para a câmera Yoosee.
+    
+    Args:
+        stream_type: Tipo de stream ('onvif1', 'onvif2', 'live', 'stream11', 'h264')
+        custom_path: Caminho personalizado (sobrescreve stream_type)
+    
+    Returns:
+        URL RTSP completa
+    """
+    config = YOOSEE_CONFIG
+    
+    # Escolher o caminho
+    if custom_path:
+        path = custom_path
+    else:
+        path = YOOSEE_RTSP_PATHS.get(stream_type, "/onvif1")
+    
+    # Formatar com usuário e senha se fornecidos
+    if config["username"] and config["password"]:
+        # URL com autenticação [citation:4][citation:8]
+        url = f"rtsp://{config['username']}:{config['password']}@{config['ip']}:{config['port']}{path}"
+    else:
+        # URL sem autenticação
+        url = f"rtsp://{config['ip']}:{config['port']}{path}"
+    
+    return url
+
+# Cache da última URL gerada
+YOOSEE_RTSP_URL = get_yoosee_rtsp_url(YOOSEE_CONFIG["stream"])

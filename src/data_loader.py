@@ -63,7 +63,12 @@ class HumanDatasetLoader:
             # Mover para o local final
             if self.raw_path.exists():
                 shutil.rmtree(self.raw_path)
-            shutil.move(str(temp_dir / "human_detection"), str(self.raw_path))
+            
+            # Listar o diretório para encontrar o nome correto
+            downloaded_items = list(temp_dir.iterdir())
+            if downloaded_items:
+                downloaded_path = downloaded_items[0]
+                shutil.move(str(downloaded_path), str(self.raw_path))
             
             # Limpar
             shutil.rmtree(temp_dir)
@@ -93,23 +98,23 @@ class HumanDatasetLoader:
         
         # Criar diretórios de classe
         for dir_path in class_dirs.values():
-            dir_path.mkdir(parents=True,, exist_ok=True)
+            dir_path.mkdir(parents=True, exist_ok=True)
         
         # Mapear arquivos para classes (baseado no dataset original)
-        # O dataset tem pastas 'positive' e 'negative'
-        positive_dir = self.raw_path / "positive"
-        negative_dir = self.raw_path / "negative"
+        # O dataset tem pastas '0' (sem humano) e '1' (com humano)
+        class_0_dir = self.raw_path / "0"
+        class_1_dir = self.raw_path / "1"
         
-        # Processar imagens positivas (com humanos)
-        if positive_dir.exists():
-            for img_path in tqdm(list(positive_dir.glob("*.png")), desc="Processando positivas"):
-                dest_path = class_dirs["1"] / img_path.name
+        # Processar imagens da classe 0 (sem humano)
+        if class_0_dir.exists():
+            for img_path in tqdm(list(class_0_dir.glob("*.png")), desc="Processando classe 0"):
+                dest_path = class_dirs["0"] / img_path.name
                 self._copy_and_resize_image(img_path, dest_path)
         
-        # Processar imagens negativas (sem humanos)
-        if negative_dir.exists():
-            for img_path in tqdm(list(negative_dir.glob("*.png")), desc="Processando negativas"):
-                dest_path = class_dirs["0"] / img_path.name
+        # Processar imagens da classe 1 (com humano)
+        if class_1_dir.exists():
+            for img_path in tqdm(list(class_1_dir.glob("*.png")), desc="Processando classe 1"):
+                dest_path = class_dirs["1"] / img_path.name
                 self._copy_and_resize_image(img_path, dest_path)
         
         logger.info(f"Dataset organizado: {self.processed_path}")
