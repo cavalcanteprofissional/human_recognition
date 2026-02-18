@@ -53,8 +53,22 @@ def main():
                        help='Analisar resultados de treinamento (caminho do JSON)')
     parser.add_argument('--compare-filters', action='store_true',
                        help='Criar comparação de filtros')
+    parser.add_argument('--auto-find-yoosee', action='store_true',
+                       help='Encontrar IP da câmera Yoosee automaticamente na rede')
+    parser.add_argument('--dashboard', action='store_true',
+                       help='Executar dashboard Streamlit')
     
     args = parser.parse_args()
+    
+    if args.auto_find_yoosee:
+        from src.config import find_and_update_yoosee_ip
+        logger.info("Buscando câmera Yoosee na rede...")
+        ip, port, stream = find_and_update_yoosee_ip()
+        if ip:
+            logger.info(f"Câmera encontrada: {ip}:{port}, stream: {stream}")
+        else:
+            logger.warning("Câmera não encontrada na rede.")
+        return
     
     if args.setup:
         setup_project()
@@ -69,7 +83,8 @@ def main():
             filter_type=args.filter,
             source=args.source,
             yoosee_ip=args.yoosee_ip,
-            yoosee_stream=args.yoosee_stream
+            yoosee_stream=args.yoosee_stream,
+            auto_find_yoosee=args.auto_find_yoosee
         )
     
     if args.dashboard:

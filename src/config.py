@@ -71,13 +71,14 @@ YOOSEE_RTSP_PATHS = {
     "user_pass": "/user=[USERNAME]&password=[PASSWORD]&channel=1&stream=0.sdp?"  # Formato alternativo
 }
 
-def get_yoosee_rtsp_url(stream_type="onvif1", custom_path=None):
+def get_yoosee_rtsp_url(stream_type="onvif1", custom_path=None, use_tcp=True):
     """
     Gera a URL RTSP para a câmera Yoosee.
     
     Args:
         stream_type: Tipo de stream ('onvif1', 'onvif2', 'live', 'stream11', 'h264')
         custom_path: Caminho personalizado (sobrescreve stream_type)
+        use_tcp: Se True, força transporte TCP
     
     Returns:
         URL RTSP completa
@@ -90,15 +91,55 @@ def get_yoosee_rtsp_url(stream_type="onvif1", custom_path=None):
     else:
         path = YOOSEE_RTSP_PATHS.get(stream_type, "/onvif1")
     
+    # Adicionar ?tcp para forçar transporte TCP (resolve problema com algumas câmeras)
+    transport = "?tcp" if use_tcp else ""
+    
     # Formatar com usuário e senha se fornecidos
     if config["username"] and config["password"]:
         # URL com autenticação [citation:4][citation:8]
-        url = f"rtsp://{config['username']}:{config['password']}@{config['ip']}:{config['port']}{path}"
+        url = f"rtsp://{config['username']}:{config['password']}@{config['ip']}:{config['port']}{path}{transport}"
     else:
         # URL sem autenticação
-        url = f"rtsp://{config['ip']}:{config['port']}{path}"
+        url = f"rtsp://{config['ip']}:{config['port']}{path}{transport}"
     
     return url
 
 # Cache da última URL gerada
 YOOSEE_RTSP_URL = get_yoosee_rtsp_url(YOOSEE_CONFIG["stream"])
+
+
+def reload_yoosee_config():
+    """
+    Recarrega as configurações da câmera Yoosee do arquivo .env.
+    Útil após o .env ser atualizado dinamicamente.
+    """
+    global YOOSEE_CONFIG, YOOSEE_RTSP_URL
+    
+    YOOSEE_CONFIG = {
+        "ip": os.getenv("YOOSEE_IP", "192.168.1.100"),
+        "port": int(os.getenv("YOOSEE_PORT", "554")),
+        "username": os.getenv("YOOSEE_USERNAME", "admin"),
+        "password": os.getenv("YOOSEE_PASSWORD", ""),
+        "stream": os.getenv("YOOSEE_STREAM", "onvif1")
+    }
+    
+    YOOSEE_RTSP_URL = get_yoosee_rtsp_url(YOOSEE_CONFIG["stream"])
+    
+    return YOOSEE_CONFIG
+
+
+def find_and_update_yoosee_ip():
+    """
+    Encontra a câmera Yoosee na rede e atualiza o arquivo .env.
+    
+    Returns:
+        Tuple (ip, port, stream_type) se encontrado, (None, None, None) caso contrário
+    """
+    from tools.find_yoosee_ip import update_env_with_camera_ip
+    
+    result = update_env_with_camera_ip()
+    
+    if result[0] is not None:
+        reload_yoosee_config()
+    
+    return result

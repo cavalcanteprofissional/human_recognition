@@ -66,9 +66,10 @@ class YooseeCamera:
             self.rtsp_url = rtsp_url
         elif ip:
             # Formato: rtsp://usuario:senha@ip:porta/caminho
+            # Adicionar ?tcp para forçar transporte TCP
             auth = f"{username}:{password}@" if username and password else ""
             path = YOOSEE_RTSP_PATHS.get(stream_type, "/onvif1")
-            self.rtsp_url = f"rtsp://{auth}{ip}:{port}{path}"
+            self.rtsp_url = f"rtsp://{auth}{ip}:{port}{path}?tcp"
         else:
             # Usar configurações padrão do .env
             self.rtsp_url = get_yoosee_rtsp_url(stream_type)

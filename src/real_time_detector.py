@@ -155,8 +155,9 @@ class HumanDetector:
             self.frame_count = 0
     
     def run(self, filter_type: str = 'cartoon', source: str = 'webcam',
-            yoosee_ip: str = None, yoosee_user: str = None, 
-            yoosee_password: str = None, yoosee_stream: str = "onvif1"):
+            yoosee_ip: str | None = None, yoosee_user: str | None = None, 
+            yoosee_password: str | None = None, yoosee_stream: str = "onvif1",
+            auto_find_yoosee: bool = False):
         """
         Executa o detector em tempo real.
         
@@ -167,6 +168,7 @@ class HumanDetector:
             yoosee_user: Usuário da câmera Yoosee
             yoosee_password: Senha da câmera Yoosee
             yoosee_stream: Stream da câmera ('onvif1', 'onvif2', etc.)
+            auto_find_yoosee: Se True, busca IP automaticamente se conexão falhar
         """
         logger.info(f"Iniciando captura com filtro: {filter_type}, fonte: {source}")
         logger.info("Pressione 'q' para sair")
@@ -176,10 +178,13 @@ class HumanDetector:
         yoosee_cam = None
         
         if source == 'yoosee':
-            from src.config import YOOSEE_CONFIG
-            yoosee_ip = yoosee_ip or YOOSEE_CONFIG.get('ip')
-            yoosee_user = yoosee_user or YOOSEE_CONFIG.get('username', 'admin')
-            yoosee_password = yoosee_password or YOOSEE_CONFIG.get('password', '')
+            from src.config import YOOSEE_CONFIG, find_and_update_yoosee_ip, reload_yoosee_config
+            
+            yoosee_ip = yoosee_ip or str(YOOSEE_CONFIG.get('ip', ''))
+            yoosee_user = yoosee_user or str(YOOSEE_CONFIG.get('username', 'admin'))
+            yoosee_password = yoosee_password or str(YOOSEE_CONFIG.get('password', ''))
+            use_gateway = False
+            http_url = None
             
             logger.info(f"Conectando à câmera Yoosee: {yoosee_ip}")
             yoosee_cam = YooseeCamera(
@@ -190,11 +195,74 @@ class HumanDetector:
             )
             
             if not yoosee_cam.connect():
-                logger.error("Falha ao conectar à câmera Yoosee")
-                return
+                logger.warning("Conexão direta RTSP falhou")
+                
+                if auto_find_yoosee:
+                    logger.info("Tentando encontrar câmera automaticamente na rede...")
+                    ip, port, stream = find_and_update_yoosee_ip()
+                    
+                    if ip:
+                        yoosee_ip = ip
+                        yoosee_stream = stream or yoosee_stream
+                        reload_yoosee_config()
+                        
+                        logger.info(f"Tentando conectar com novo IP: {yoosee_ip}")
+                        yoosee_cam = YooseeCamera(
+                            ip=yoosee_ip,
+                            username=yoosee_user,
+                            password=yoosee_password,
+                            stream_type=yoosee_stream
+                        )
+                        
+                        if not yoosee_cam.connect():
+                            logger.warning("Tentando via gateway FFmpeg...")
+                            use_gateway = True
+                    else:
+                        logger.warning("Câmera não encontrada na rede, tentando gateway FFmpeg...")
+                        use_gateway = True
+                else:
+                    logger.warning("Tentando via gateway FFmpeg...")
+                    use_gateway = True
+                
+                if use_gateway:
+                    try:
+                        from tools.rtsp_gateway import create_rtsp_url, start_rtsp_gateway, check_ffmpeg
+                        
+                        available, version = check_ffmpeg()
+                        if not available:
+                            logger.error("FFmpeg não disponível. Instale: winget install ffmpeg")
+                            return
+                        
+                        logger.info(f"FFmpeg: {version}")
+                        
+                        rtsp_url = create_rtsp_url(
+                            yoosee_ip, 554, 
+                            yoosee_user, yoosee_password, 
+                            yoosee_stream
+                        )
+                        
+                        success, result = start_rtsp_gateway(rtsp_url, http_port=8554)
+                        
+                        if success:
+                            http_url = result
+                            logger.info(f"Gateway FFmpeg ativo: {http_url}")
+                        else:
+                            logger.error(f"Gateway falhou: {result}")
+                            return
+                    except Exception as e:
+                        logger.error(f"Erro ao iniciar gateway: {e}")
+                        return
             
-            yoosee_cam.start_streaming()
-            source_label = "YOOSEE"
+            if use_gateway and http_url:
+                cap = cv2.VideoCapture(http_url)
+                if not cap.isOpened():
+                    logger.error("Não foi possível conectar via gateway")
+                    return
+                logger.info(f"Conectado via gateway HTTP: {http_url}")
+                source_label = "YOOSEE (GW)"
+            else:
+                yoosee_cam.start_streaming()
+                source_label = "YOOSEE"
         else:
             cap = cv2.VideoCapture(0)
             source_label = "WEBCAM"
@@ -212,17 +280,22 @@ class HumanDetector:
         
         while True:
             # Ler frame da fonte apropriada
-            if source == 'yoosee' and yoosee_cam:
-                frame = yoosee_cam.get_frame()
-                if frame is None:
-                    ret, frame = yoosee_cam.read_frame()
+            if source == 'yoosee':
+                if use_gateway and http_url:
+                    ret, frame = cap.read()
+                elif yoosee_cam:
+                    frame = yoosee_cam.get_frame()
+                    if frame is None:
+                        ret, frame = yoosee_cam.read_frame()
+                    else:
+                        ret = frame is not None
                 else:
-                    ret = frame is not None
+                    ret, frame = False, None
             else:
                 ret, frame = cap.read()
             
             if not ret or frame is None:
-                if source == 'yoosee':
+                if source == 'yoosee' and yoosee_cam and not use_gateway:
                     logger.warning("Tentando reconectar...")
                     if yoosee_cam.reconnect():
                         yoosee_cam.start_streaming()
@@ -279,8 +352,18 @@ class HumanDetector:
                 filter_idx = (filter_idx + 1) % len(filter_options)
                 logger.info(f"Filtro alterado para: {filter_options[filter_idx]}")
         
-        if source == 'yoosee' and yoosee_cam:
-            yoosee_cam.disconnect()
+        if source == 'yoosee':
+            if use_gateway and http_url:
+                if cap:
+                    cap.release()
+                try:
+                    from tools.rtsp_gateway import stop_gateway
+                    stop_gateway()
+                    logger.info("Gateway FFmpeg parado")
+                except:
+                    pass
+            elif yoosee_cam:
+                yoosee_cam.disconnect()
         elif cap:
             cap.release()
         
