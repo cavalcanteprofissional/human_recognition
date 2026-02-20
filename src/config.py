@@ -30,8 +30,64 @@ DATASET_PATH = RAW_DATA_DIR / "human-detection-dataset"
 # Configurações de processamento
 TARGET_SIZE = (256, 256)
 RANDOM_SEED = 42
-TEST_SIZE = 0.2
-VALIDATION_SIZE = 0.1
+
+# Divisão de dados (Train/Val/Test)
+TRAIN_SIZE = 0.70
+VALIDATION_SIZE = 0.15
+TEST_SIZE = 0.15
+
+# Validação cruzada
+CV_FOLDS = 5
+CV_SCORING = "accuracy"
+
+# Configurações de modelos avançados
+ADVANCED_MODELS_CONFIG = {
+    "random_forest": {
+        "n_estimators": [50, 100, 200],
+        "max_depth": [5, 10, 15, None],
+        "min_samples_split": [2, 5, 10],
+        "min_samples_leaf": [1, 2, 4]
+    },
+    "gradient_boosting": {
+        "n_estimators": [50, 100, 200],
+        "learning_rate": [0.01, 0.1, 0.3],
+        "max_depth": [3, 5, 7]
+    },
+    "xgboost": {
+        "n_estimators": [50, 100, 200],
+        "learning_rate": [0.01, 0.1, 0.3],
+        "max_depth": [3, 5, 7]
+    },
+    "lightgbm": {
+        "n_estimators": [50, 100, 200],
+        "learning_rate": [0.01, 0.1, 0.3],
+        "max_depth": [3, 5, 7, -1]
+    },
+    "svm": {
+        "C": [0.1, 1, 10],
+        "kernel": ["rbf", "linear"],
+        "gamma": ["scale", "auto"]
+    },
+    "knn": {
+        "n_neighbors": [3, 5, 7, 11],
+        "weights": ["uniform", "distance"],
+        "metric": ["euclidean", "manhattan"]
+    },
+    "logistic_regression": {
+        "C": [0.1, 1, 10],
+        "solver": ["lbfgs", "liblinear"],
+        "max_iter": [1000]
+    },
+    "mlp": {
+        "hidden_layer_sizes": [(50,), (100,), (50, 50), (100, 50)],
+        "activation": ["relu", "tanh"],
+        "alpha": [0.0001, 0.001],
+        "max_iter": [500]
+    }
+}
+
+# Modelos para ensemble (serão treinados individualmente primeiro)
+ENSEMBLE_BASE_MODELS = ["random_forest", "gradient_boosting", "xgboost", "svm", "logistic_regression"]
 
 # Configurações do LBP
 LBP_CONFIG = {

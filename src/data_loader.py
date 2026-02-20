@@ -13,7 +13,7 @@ from tqdm import tqdm
 from src.config import (
     KAGGLE_CONFIG, DATASET_NAME, DATASET_PATH,
     RAW_DATA_DIR, PROCESSED_DATA_DIR, TARGET_SIZE,
-    RANDOM_SEED, TEST_SIZE, VALIDATION_SIZE
+    RANDOM_SEED, TRAIN_SIZE, VALIDATION_SIZE, TEST_SIZE
 )
 
 # Configura logging
@@ -138,12 +138,12 @@ class HumanDatasetLoader:
     
     def create_train_val_test_split(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
-        Cria a divisão treino/validação/teste.
+        Cria a divisão treino/validação/teste com proporção 70/15/15.
         
         Returns:
             Tupla com (X_train, X_val, X_test, y_train, y_val, y_test)
         """
-        logger.info("Criando divisão treino/validação/teste...")
+        logger.info("Criando divisão treino/validação/teste (70/15/15)...")
         
         # Coletar todos os caminhos de imagem e rótulos
         image_paths = []
@@ -162,24 +162,24 @@ class HumanDatasetLoader:
         # Primeira divisão: treino (70%) e temporário (30%)
         X_train, X_temp, y_train, y_temp = train_test_split(
             X, y, 
-            test_size=(TEST_SIZE + VALIDATION_SIZE),
+            test_size=(1 - TRAIN_SIZE),
             random_state=RANDOM_SEED,
             stratify=y
         )
         
-        # Segunda divisão: validação (10%) e teste (20%) a partir do temporário
-        val_size = VALIDATION_SIZE / (TEST_SIZE + VALIDATION_SIZE)
+        # Segunda divisão: validação (15%) e teste (15%) a partir do temporário
+        val_ratio = VALIDATION_SIZE / (VALIDATION_SIZE + TEST_SIZE)
         X_val, X_test, y_val, y_test = train_test_split(
             X_temp, y_temp,
-            test_size=TEST_SIZE/(TEST_SIZE + VALIDATION_SIZE),
+            test_size=(1 - val_ratio),
             random_state=RANDOM_SEED,
             stratify=y_temp
         )
         
         logger.info(f"Divisão criada:")
-        logger.info(f"  Treino: {len(X_train)} imagens")
-        logger.info(f"  Validação: {len(X_val)} imagens")
-        logger.info(f"  Teste: {len(X_test)} imagens")
+        logger.info(f"  Treino: {len(X_train)} imagens ({len(X_train)/len(X)*100:.1f}%)")
+        logger.info(f"  Validação: {len(X_val)} imagens ({len(X_val)/len(X)*100:.1f}%)")
+        logger.info(f"  Teste: {len(X_test)} imagens ({len(X_test)/len(X)*100:.1f}%)")
         
         # Salvar os splits
         np.savez(

@@ -50,6 +50,7 @@ Este projeto foi desenvolvido como Trabalho Final para a disciplina de Processam
 - Webcam ou Câmera IP Yoosee
 - Conta no Kaggle (para download do dataset)
 - PyAV (`pip install av`) - para suporte a autenticação Digest RTSP
+- XGBoost e LightGBM (`pip install xgboost lightgbm`) - para modelos avançados
 
 ### Instalação
 
@@ -113,7 +114,10 @@ human_recognition/
 │   ├── config.py             # Configurações
 │   ├── data_loader.py        # Carregamento do dataset
 │   ├── feature_extractor.py  # Extração LBP
-│   ├── train.py              # Treinamento do modelo
+│   ├── train.py              # Treinamento básico (RF)
+│   ├── train_advanced.py     # Treinamento avançado (múltiplos modelos)
+│   ├── model_registry.py     # Registro de modelos
+│   ├── ensemble.py           # Voting/Stacking ensembles
 │   ├── real_time_detector.py # Detecção em tempo real
 │   ├── yoosee_camera.py     # Integração com câmera Yoosee
 │   └── utils.py              # Utilitários
@@ -134,17 +138,35 @@ human_recognition/
 
 ### 1. Pipeline de Machine Learning
 - **Dataset**: Human Detection Dataset (Kaggle) com 921 imagens 256x256
+- **Divisão**: 70% treino / 15% validação / 15% teste
 - **Extração de características**: LBP (Local Binary Patterns) com 59 features
-- **Classificador**: Random Forest com grid search de hiperparâmetros
-- **Métricas**: Acurácia, Precisão, Recall, F1-Score, Matriz de Confusão
+- **Validação Cruzada**: 5-fold CV com Grid Search de hiperparâmetros
+- **Métricas**: Acurácia, Precisão, Recall, F1-Score, AUC-ROC, Matriz de Confusão
 
-### 2. Detecção em Tempo Real
+### 2. Modelos Disponíveis (8 classificadores)
+
+| Modelo | Tipo | Descrição |
+|--------|------|-----------|
+| Random Forest | Ensemble (Bagging) | Floresta aleatória |
+| Gradient Boosting | Ensemble (Boosting) | Boosting sequencial |
+| XGBoost | Ensemble (Boosting) | Extreme Gradient Boosting |
+| LightGBM | Ensemble (Boosting) | Light Gradient Boosting |
+| SVM | Kernel | Support Vector Machine (RBF) |
+| KNN | Instance-based | K-Nearest Neighbors |
+| Logistic Regression | Linear | Regressão logística |
+| MLP | Neural Network | Perceptron multicamadas |
+
+### 3. Ensemble de Modelos
+- **Voting Ensemble**: Combina predições dos melhores modelos
+- **Seleção automática**: Os 5 melhores modelos formam o ensemble
+
+### 4. Detecção em Tempo Real
 - **Webcam local**: Suporte nativo via OpenCV
 - **Câmera Yoosee**: Integração via RTSP/ONVIF com autenticação Digest via proxy PyAV
 - **Baixa latência**: Streaming otimizado para tempo real
 - **IP Dinâmico**: Auto-discovery na rede local
 
-### 3. Filtros Criativos
+### 5. Filtros Criativos
 
 | Filtro | Descrição |
 |--------|-----------|
@@ -155,7 +177,7 @@ human_recognition/
 | pencil | Efeito de desenho a lápis |
 | none | Sem filtro |
 
-### 4. Dashboard Interativo
+### 6. Dashboard Interativo
 - **Visão Geral**: Pipeline completo e explicação do LBP
 - **Treinamento**: Configuração de parâmetros e grid search
 - **Detecção**: Transmissão ao vivo com estatísticas
@@ -171,8 +193,31 @@ poetry run python run.py --setup
 ```
 
 ### 2. Treinar Modelo
+
+#### Treinamento Básico (Random Forest)
 ```bash
 poetry run python run.py --train
+```
+
+#### Treinamento Avançado (Múltiplos Modelos)
+```bash
+# Treinar todos os 8 modelos + ensemble
+poetry run python run.py --train-advanced
+
+# Treinar modelos específicos
+poetry run python run.py --train-advanced --models random_forest,xgboost,svm
+
+# Com mais folds de validação cruzada
+poetry run python run.py --train-advanced --cv-folds 10
+
+# Sem ensemble
+poetry run python run.py --train-advanced --no-ensemble
+
+# Listar modelos disponíveis
+poetry run python run.py --list-models
+
+# Comparar resultados de treinamentos anteriores
+poetry run python run.py --compare-models
 ```
 
 ### 3. Executar Dashboard
@@ -219,11 +264,6 @@ python run.py --detect --source yoosee --yoosee-ip 192.168.100.49
 ### Teste de Conexão
 ```bash
 python tools/test_yoosee_connection.py --ip 192.168.100.49 --diagnose
-```
-
-### Teste de Conexão
-```bash
-poetry run python tools/test_yoosee_connection.py --ip 192.168.100.47 --diagnose
 ```
 
 ---
