@@ -52,6 +52,9 @@ class HumanDetector:
         self.last_time = time.time()
         self.frame_count = 0
         
+        # Proxy MJPEG
+        self._mjpeg_streamer = None
+        
         logger.info("Detector inicializado!")
     
     def preprocess_frame(self, frame: np.ndarray) -> np.ndarray:
@@ -229,29 +232,52 @@ class HumanDetector:
                         from tools.rtsp_gateway import create_rtsp_url, start_rtsp_gateway, check_ffmpeg
                         
                         available, version = check_ffmpeg()
-                        if not available:
-                            logger.error("FFmpeg não disponível. Instale: winget install ffmpeg")
-                            return
-                        
-                        logger.info(f"FFmpeg: {version}")
-                        
-                        rtsp_url = create_rtsp_url(
-                            yoosee_ip, 554, 
-                            yoosee_user, yoosee_password, 
-                            yoosee_stream
-                        )
-                        
-                        success, result = start_rtsp_gateway(rtsp_url, http_port=8554)
-                        
-                        if success:
-                            http_url = result
-                            logger.info(f"Gateway FFmpeg ativo: {http_url}")
+                        if available:
+                            logger.info(f"FFmpeg: {version}")
+                            
+                            rtsp_url = create_rtsp_url(
+                                yoosee_ip, 554, 
+                                yoosee_user, yoosee_password, 
+                                yoosee_stream
+                            )
+                            
+                            success, result = start_rtsp_gateway(rtsp_url, http_port=8555)
+                            
+                            if success:
+                                http_url = result
+                                logger.info(f"Gateway FFmpeg ativo: {http_url}")
+                            else:
+                                logger.warning("Gateway FFmpeg falhou, tentando proxy PyAV...")
+                                raise Exception("FFmpeg failed")
                         else:
-                            logger.error(f"Gateway falhou: {result}")
-                            return
+                            logger.warning("FFmpeg não disponível, usando proxy PyAV...")
+                            raise Exception("FFmpeg not available")
                     except Exception as e:
-                        logger.error(f"Erro ao iniciar gateway: {e}")
-                        return
+                        logger.info(f"Iniciando proxy PyAV (Digest Auth)...")
+                        try:
+                            import threading
+                            from tools.rtsp_to_mjpeg import MJPEGStreamer, StreamConfig
+                            
+                            config = StreamConfig(
+                                ip=yoosee_ip,
+                                port=554,
+                                username=yoosee_user,
+                                password=yoosee_password,
+                                stream_path=f"/{yoosee_stream}" if not yoosee_stream.startswith("/") else yoosee_stream,
+                                local_port=8554
+                            )
+                            
+                            mjpeg_streamer = MJPEGStreamer(config)
+                            mjpeg_streamer.start()
+                            time.sleep(2)
+                            
+                            http_url = f"http://localhost:8554/stream"
+                            logger.info(f"Proxy PyAV ativo: {http_url}")
+                            
+                            self._mjpeg_streamer = mjpeg_streamer
+                        except Exception as pe:
+                            logger.error(f"Proxy PyAV também falhou: {pe}")
+                            return
             
             if use_gateway and http_url:
                 cap = cv2.VideoCapture(http_url)
@@ -364,6 +390,10 @@ class HumanDetector:
                     pass
             elif yoosee_cam:
                 yoosee_cam.disconnect()
+            
+            if self._mjpeg_streamer:
+                self._mjpeg_streamer.stop()
+                logger.info("Proxy PyAV parado")
         elif cap:
             cap.release()
         

@@ -49,6 +49,7 @@ Este projeto foi desenvolvido como Trabalho Final para a disciplina de Processam
 - Poetry (gerenciador de dependências)
 - Webcam ou Câmera IP Yoosee
 - Conta no Kaggle (para download do dataset)
+- PyAV (`pip install av`) - para suporte a autenticação Digest RTSP
 
 ### Instalação
 
@@ -78,7 +79,7 @@ KAGGLE_USERNAME=seu_usuario_kaggle
 KAGGLE_KEY=sua_chave_kaggle
 
 # Configurações da Câmera Yoosee
-YOOSEE_IP=192.168.100.47
+YOOSEE_IP=192.168.100.49
 YOOSEE_PORT=554
 YOOSEE_USERNAME=admin
 YOOSEE_PASSWORD=HonkaiImpact3rd
@@ -121,7 +122,9 @@ human_recognition/
     ├── find_yoosee_ip.py    # Scanner para encontrar câmera
     ├── test_yoosee_connection.py
     ├── test_digest_auth.py
-    ├── rtsp_gateway.py
+    ├── rtsp_client.py       # Cliente RTSP com Digest Auth
+    ├── rtsp_to_mjpeg.py     # Proxy RTSP→HTTP (PyAV)
+    ├── rtsp_gateway.py     # Gateway FFmpeg
     └── yoosee_proxy.py
 ```
 
@@ -137,8 +140,9 @@ human_recognition/
 
 ### 2. Detecção em Tempo Real
 - **Webcam local**: Suporte nativo via OpenCV
-- **Câmera Yoosee**: Integração via RTSP/ONVIF com reconexão automática
+- **Câmera Yoosee**: Integração via RTSP/ONVIF com autenticação Digest via proxy PyAV
 - **Baixa latência**: Streaming otimizado para tempo real
+- **IP Dinâmico**: Auto-discovery na rede local
 
 ### 3. Filtros Criativos
 
@@ -209,7 +213,12 @@ poetry run python run.py --detect --source yoosee --auto-find-yoosee
 
 ### Detecção com IP Fixo
 ```bash
-poetry run python run.py --detect --source yoosee --yoosee-ip 192.168.100.47
+python run.py --detect --source yoosee --yoosee-ip 192.168.100.49
+```
+
+### Teste de Conexão
+```bash
+python tools/test_yoosee_connection.py --ip 192.168.100.49 --diagnose
 ```
 
 ### Teste de Conexão
@@ -223,19 +232,33 @@ poetry run python tools/test_yoosee_connection.py --ip 192.168.100.47 --diagnose
 
 ### Câmera Yoosee não conecta
 
-1. **IP dinâmico**:
+1. **IP dinâmico** (recomendado):
 ```bash
 python run.py --auto-find-yoosee
 ```
+O sistema escaneia a rede automaticamente e atualiza o arquivo `.env`.
 
 2. **Problemas de autenticação**:
 - Verifique no app Yoosee se RTSP está habilitado
 - Confirme a senha correta
-- O modelo LB-CA128 requer autenticação Digest
+- O modelo LB-CA128 requer autenticação Digest (suportada automaticamente)
 
-3. **Teste de diagnóstico**:
+3. **Proxy PyAV**:
+Se o FFmpeg falhar (erro "Nonmatching transport"), o sistema usa automaticamente o proxy PyAV que implementa autenticação Digest nativamente.
+
+4. **Teste de diagnóstico**:
 ```bash
-python tools/test_yoosee_connection.py --ip 192.168.100.47 --diagnose
+python tools/test_yoosee_connection.py --ip 192.168.100.49 --diagnose
+```
+
+### Teste Manual do Proxy
+
+```bash
+# Iniciar proxy
+python tools/rtsp_to_mjpeg.py --preview
+
+# Ou via API
+python tools/rtsp_to_mjpeg.py --ip 192.168.100.49 --user admin --password HonkaiImpact3rd
 ```
 
 ### Modelos Yoosee e Caminhos RTSP

@@ -128,25 +128,25 @@ def scan_network(network="192.168.1.0/24", ports=None):
     return candidates + http_candidates
 
 def test_rtsp_url(ip, port=554, username="admin", password="123"):
-    """Testa URLs RTSP comuns com credenciais."""
+    """Testa URLs RTSP comuns com credenciais usando PyAV."""
     paths = ["/onvif1", "/onvif2", "/live.sdp", "/11", "/h264"]
     
-    for path in paths:
-        if username and password:
-            url = f"rtsp://{username}:{password}@{ip}:{port}{path}"
-        else:
-            url = f"rtsp://{ip}:{port}{path}"
-        
-        try:
-            result = subprocess.run(
-                ['ffprobe', '-v', 'quiet', '-print_format', 'json', '-show_streams', url],
-                timeout=3,
-                capture_output=True
-            )
-            if result.returncode == 0:
+    try:
+        import av
+        for path in paths:
+            if username and password:
+                url = f"rtsp://{username}:{password}@{ip}:{port}{path}"
+            else:
+                url = f"rtsp://{ip}:{port}{path}"
+            
+            try:
+                container = av.open(url, timeout=8)
+                container.close()
                 return url, path.replace('/', '')
-        except:
-            pass
+            except:
+                pass
+    except ImportError:
+        pass
     
     return None, None
 
@@ -162,6 +162,13 @@ def find_yoosee_camera(network=None, ports=None):
     Returns:
         Tuple (ip, port, stream_type) ou (None, None, None) se não encontrar
     """
+    from dotenv import load_dotenv
+    import os
+    load_dotenv()
+    
+    username = os.getenv("YOOSEE_USERNAME", "admin")
+    password = os.getenv("YOOSEE_PASSWORD", "")
+    
     if network is None:
         network = get_local_network()
     
@@ -172,7 +179,7 @@ def find_yoosee_camera(network=None, ports=None):
     
     for ip, port, proto in candidates:
         if proto == "RTSP":
-            url, stream_type = test_rtsp_url(ip, port)
+            url, stream_type = test_rtsp_url(ip, port, username, password)
             if url:
                 return ip, port, stream_type
     
