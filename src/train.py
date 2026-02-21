@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 import joblib
 import logging
@@ -142,9 +143,10 @@ class ModelTrainer:
     
     def grid_search(self, X_train: np.ndarray, y_train: np.ndarray,
                    X_val: np.ndarray, y_val: np.ndarray,
-                   param_grid: Dict = None) -> Tuple[RandomForestClassifier, Dict]:
+                   param_grid: Dict = None,
+                   cv_folds: int = 5) -> Tuple[RandomForestClassifier, Dict]:
         """
-        Realiza busca em grade de hiperparâmetros.
+        Realiza busca em grade de hiperparâmetros usando GridSearchCV (paralelizado).
         
         Args:
             X_train: Características de treino
@@ -152,6 +154,7 @@ class ModelTrainer:
             X_val: Características de validação
             y_val: Rótulos de validação
             param_grid: Grade de parâmetros para testar
+            cv_folds: Número de folds para validação cruzada
             
         Returns:
             Melhor modelo e dicionário com resultados
@@ -159,57 +162,49 @@ class ModelTrainer:
         if param_grid is None:
             param_grid = RF_CONFIG
         
-        results = []
-        best_score = 0
-        best_model = None
-        best_params = None
-        
         total_combinations = (len(param_grid['n_estimators']) * 
                             len(param_grid['max_depth']) *
                             len(param_grid['min_samples_split']) *
                             len(param_grid['min_samples_leaf']))
         
-        logger.info(f"Iniciando busca em grade com {total_combinations} combinações")
+        logger.info(f"Iniciando GridSearchCV com {total_combinations} combinações")
+        logger.info(f"Usando {cv_folds}-fold CV com paralelização (n_jobs=-1)")
         
-        for n_est in param_grid['n_estimators']:
-            for max_d in param_grid['max_depth']:
-                for min_split in param_grid['min_samples_split']:
-                    for min_leaf in param_grid['min_samples_leaf']:
-                        
-                        # Treinar modelo
-                        model = self.train_random_forest(
-                            X_train, y_train,
-                            n_estimators=n_est,
-                            max_depth=max_d,
-                            min_samples_split=min_split,
-                            min_samples_leaf=min_leaf
-                        )
-                        
-                        # Avaliar na validação
-                        metrics = self.evaluate_model(model, X_val, y_val)
-                        
-                        # Guardar resultados
-                        result = {
-                            'n_estimators': n_est,
-                            'max_depth': max_d,
-                            'min_samples_split': min_split,
-                            'min_samples_leaf': min_leaf,
-                            'val_accuracy': metrics['accuracy'],
-                            'val_f1': metrics['f1_score']
-                        }
-                        results.append(result)
-                        
-                        # Verificar se é melhor
-                        if metrics['accuracy'] > best_score:
-                            best_score = metrics['accuracy']
-                            best_model = model
-                            best_params = result
+        cv = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=RANDOM_SEED)
         
-        # Ordenar resultados por acurácia
+        base_model = RandomForestClassifier(random_state=RANDOM_SEED, n_jobs=-1)
+        
+        grid_search = GridSearchCV(
+            estimator=base_model,
+            param_grid=param_grid,
+            cv=cv,
+            scoring='accuracy',
+            n_jobs=-1,
+            verbose=2,
+            refit=True
+        )
+        
+        grid_search.fit(X_train, y_train)
+        
+        best_model = grid_search.best_estimator_
+        best_params = grid_search.best_params_
+        
+        results = []
+        for i in range(len(grid_search.cv_results_['params'])):
+            result = {
+                **grid_search.cv_results_['params'][i],
+                'val_accuracy': grid_search.cv_results_['mean_test_score'][i],
+                'val_f1': grid_search.cv_results_['mean_test_score'][i]
+            }
+            results.append(result)
+        
         results.sort(key=lambda x: x['val_accuracy'], reverse=True)
         
+        val_metrics = self.evaluate_model(best_model, X_val, y_val)
+        
         logger.info(f"\nMelhor modelo encontrado:")
-        logger.info(f"  Acurácia val: {best_score:.4f}")
+        logger.info(f"  CV Score: {grid_search.best_score_:.4f}")
+        logger.info(f"  Val Accuracy: {val_metrics['accuracy']:.4f}")
         logger.info(f"  Parâmetros: {best_params}")
         
         return best_model, results

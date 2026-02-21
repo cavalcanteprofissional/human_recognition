@@ -17,9 +17,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import json
+import multiprocessing
 
 import numpy as np
 import joblib
+from joblib import Parallel, delayed
 from sklearn.model_selection import (
     train_test_split,
     GridSearchCV,
@@ -120,12 +122,122 @@ class AdvancedTrainer:
         
         return metrics
     
+    def _train_single_model_parallel(self,
+                                    model_name: str,
+                                    X_train: np.ndarray, y_train: np.ndarray,
+                                    X_val: np.ndarray, y_val: np.ndarray,
+                                    X_test: np.ndarray, y_test: np.ndarray,
+                                    cv_folds: int,
+                                    random_state: int,
+                                    param_grid: Dict = None) -> Optional[ModelResult]:
+        """
+        Versão paralelizável de train_single_model (sem self).
+        """
+        model_class = ModelRegistry.get_model_class(model_name)
+        if model_class is None:
+            return None
+        
+        if param_grid is None:
+            param_grid = ModelRegistry.get_config(model_name)
+        
+        if not param_grid:
+            param_grid = {}
+        
+        cv = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=random_state)
+        
+        base_model = ModelRegistry.create_model(model_name)
+        if base_model is None:
+            return None
+        
+        start_time = time.time()
+        
+        cv_fold_metrics = {
+            "accuracy": [],
+            "precision": [],
+            "recall": [],
+            "f1_score": [],
+            "training_time": []
+        }
+        
+        if param_grid:
+            grid_search = GridSearchCV(
+                estimator=base_model,
+                param_grid=param_grid,
+                cv=cv,
+                scoring=CV_SCORING,
+                n_jobs=-1,
+                verbose=0,
+                refit=True
+            )
+            
+            grid_search.fit(X_train, y_train)
+            
+            best_model = grid_search.best_estimator_
+            best_params = grid_search.best_params_
+            cv_results = grid_search.cv_results_
+            
+            cv_mean = cv_results["mean_test_score"][grid_search.best_index_]
+            cv_std = cv_results["std_test_score"][grid_search.best_index_]
+            
+            for i in range(cv_folds):
+                fold_score = cv_results.get(f"split{i}_test_score", [None])[grid_search.best_index_]
+                if fold_score is not None:
+                    cv_fold_metrics["accuracy"].append(float(fold_score))
+                    cv_fold_metrics["precision"].append(float(fold_score))
+                    cv_fold_metrics["recall"].append(float(fold_score))
+                    cv_fold_metrics["f1_score"].append(float(fold_score))
+                cv_fold_metrics["training_time"].append(0.0)
+        else:
+            best_model = base_model
+            best_model.fit(X_train, y_train)
+            best_params = {}
+            
+            cv_scores = cross_val_score(best_model, X_train, y_train, 
+                                       cv=cv, scoring=CV_SCORING, n_jobs=-1)
+            cv_mean = cv_scores.mean()
+            cv_std = cv_scores.std()
+            
+            for score in cv_scores:
+                cv_fold_metrics["accuracy"].append(float(score))
+                cv_fold_metrics["precision"].append(float(score))
+                cv_fold_metrics["recall"].append(float(score))
+                cv_fold_metrics["f1_score"].append(float(score))
+                cv_fold_metrics["training_time"].append(0.0)
+        
+        training_time = time.time() - start_time
+        
+        y_val_pred = best_model.predict(X_val)
+        y_val_proba = best_model.predict_proba(X_val) if hasattr(best_model, "predict_proba") else None
+        val_metrics = self._compute_metrics(y_val, y_val_pred, y_val_proba)
+        
+        y_test_pred = best_model.predict(X_test)
+        y_test_proba = best_model.predict_proba(X_test) if hasattr(best_model, "predict_proba") else None
+        test_metrics = self._compute_metrics(y_test, y_test_pred, y_test_proba)
+        test_metrics.training_time = training_time
+        
+        cv_metrics = ModelMetrics(accuracy=cv_mean)
+        cv_std_dict = {"accuracy": cv_std}
+        
+        model_type = "ensemble" if model_name in ["voting_ensemble", "stacking_ensemble"] else "single"
+        
+        return ModelResult(
+            model_name=model_name,
+            model_type=model_type,
+            best_params=best_params,
+            cv_metrics=cv_metrics,
+            cv_std=cv_std_dict,
+            cv_fold_metrics=cv_fold_metrics,
+            val_metrics=val_metrics,
+            test_metrics=test_metrics,
+            model=best_model
+        )
+    
     def train_single_model(self,
-                          model_name: str,
-                          X_train: np.ndarray, y_train: np.ndarray,
-                          X_val: np.ndarray, y_val: np.ndarray,
-                          X_test: np.ndarray, y_test: np.ndarray,
-                          param_grid: Dict = None) -> Optional[ModelResult]:
+                           model_name: str,
+                           X_train: np.ndarray, y_train: np.ndarray,
+                           X_val: np.ndarray, y_val: np.ndarray,
+                           X_test: np.ndarray, y_test: np.ndarray,
+                           param_grid: Dict = None) -> Optional[ModelResult]:
         """
         Treina um único modelo com Grid Search CV.
         """
@@ -154,6 +266,14 @@ class AdvancedTrainer:
         
         start_time = time.time()
         
+        cv_fold_metrics = {
+            "accuracy": [],
+            "precision": [],
+            "recall": [],
+            "f1_score": [],
+            "training_time": []
+        }
+        
         if param_grid:
             logger.info(f"Grid Search com {self._count_combinations(param_grid)} combinações...")
             
@@ -175,6 +295,15 @@ class AdvancedTrainer:
             
             cv_mean = cv_results["mean_test_score"][grid_search.best_index_]
             cv_std = cv_results["std_test_score"][grid_search.best_index_]
+            
+            for i in range(self.cv_folds):
+                fold_score = cv_results.get(f"split{i}_test_score", [None])[grid_search.best_index_]
+                if fold_score is not None:
+                    cv_fold_metrics["accuracy"].append(float(fold_score))
+                    cv_fold_metrics["precision"].append(float(fold_score))
+                    cv_fold_metrics["recall"].append(float(fold_score))
+                    cv_fold_metrics["f1_score"].append(float(fold_score))
+                cv_fold_metrics["training_time"].append(0.0)
         else:
             logger.info("Treinando sem Grid Search...")
             best_model = base_model
@@ -185,6 +314,13 @@ class AdvancedTrainer:
                                        cv=cv, scoring=CV_SCORING, n_jobs=-1)
             cv_mean = cv_scores.mean()
             cv_std = cv_scores.std()
+            
+            for score in cv_scores:
+                cv_fold_metrics["accuracy"].append(float(score))
+                cv_fold_metrics["precision"].append(float(score))
+                cv_fold_metrics["recall"].append(float(score))
+                cv_fold_metrics["f1_score"].append(float(score))
+                cv_fold_metrics["training_time"].append(0.0)
         
         training_time = time.time() - start_time
         
@@ -215,6 +351,7 @@ class AdvancedTrainer:
             best_params=best_params,
             cv_metrics=cv_metrics,
             cv_std=cv_std_dict,
+            cv_fold_metrics=cv_fold_metrics,
             val_metrics=val_metrics,
             test_metrics=test_metrics,
             model=best_model
@@ -236,27 +373,60 @@ class AdvancedTrainer:
                         X_val: np.ndarray, y_val: np.ndarray,
                         X_test: np.ndarray, y_test: np.ndarray,
                         model_names: List[str] = None,
-                        include_ensemble: bool = True) -> ModelComparison:
+                        include_ensemble: bool = True,
+                        n_jobs: int = -1,
+                        parallel: bool = True) -> ModelComparison:
         """
         Treina todos os modelos e retorna comparação.
+        
+        Args:
+            X_train, y_train: Dados de treino
+            X_val, y_val: Dados de validação
+            X_test, y_test: Dados de teste
+            model_names: Lista de modelos a treinar (None = todos)
+            include_ensemble: Se True, cria ensemble no final
+            n_jobs: Número de jobs paralelos (-1 = todos os cores)
+            parallel: Se True, usa paralelização para treinar modelos
         """
         if model_names is None:
             model_names = ModelRegistry.list_models()
         
         logger.info(f"\n{'#'*60}")
         logger.info(f"INICIANDO TREINAMENTO DE {len(model_names)} MODELOS")
+        if parallel:
+            n_workers = multiprocessing.cpu_count() if n_jobs == -1 else n_jobs
+            logger.info(f"PARALELIZAÇÃO ATIVADA: {n_workers} workers")
         logger.info(f"{'#'*60}\n")
         
-        for model_name in model_names:
-            result = self.train_single_model(
-                model_name=model_name,
-                X_train=X_train, y_train=y_train,
-                X_val=X_val, y_val=y_val,
-                X_test=X_test, y_test=y_test
+        if parallel:
+            results = Parallel(n_jobs=n_jobs, verbose=10)(
+                delayed(self._train_single_model_parallel)(
+                    model_name=model_name,
+                    X_train=X_train, y_train=y_train,
+                    X_val=X_val, y_val=y_val,
+                    X_test=X_test, y_test=y_test,
+                    cv_folds=self.cv_folds,
+                    random_state=self.random_state
+                )
+                for model_name in model_names
             )
             
-            if result:
-                self.comparison.add_result(result)
+            for result in results:
+                if result:
+                    self.comparison.add_result(result)
+                    self.trained_models[result.model_name] = result.model
+                    logger.info(f"✓ {result.model_name}: Acc={result.test_metrics.accuracy:.4f}, F1={result.test_metrics.f1_score:.4f}")
+        else:
+            for model_name in model_names:
+                result = self.train_single_model(
+                    model_name=model_name,
+                    X_train=X_train, y_train=y_train,
+                    X_val=X_val, y_val=y_val,
+                    X_test=X_test, y_test=y_test
+                )
+                
+                if result:
+                    self.comparison.add_result(result)
         
         if include_ensemble and len(self.trained_models) >= 2:
             logger.info(f"\n{'='*60}")

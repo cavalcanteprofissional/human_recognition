@@ -2,10 +2,12 @@ import numpy as np
 from skimage import io, color
 from skimage.feature import local_binary_pattern
 from skimage.transform import resize
-from typing import List, Union
+from typing import List, Union, Tuple
 from pathlib import Path
 import logging
 from tqdm import tqdm
+from joblib import Parallel, delayed
+import multiprocessing
 
 from src.config import LBP_CONFIG, TARGET_SIZE
 
@@ -131,17 +133,79 @@ class LBPFeatureExtractor:
         
         return hist
     
-    def extract_batch(self, image_paths: List[Union[str, Path]], 
-                     show_progress: bool = True) -> np.ndarray:
+    def _extract_single(self, img_path: Union[str, Path]) -> Tuple[Union[np.ndarray, None], int]:
         """
-        Extrai características de um lote de imagens.
+        Extrai características de uma única imagem (para paralelização).
+        
+        Args:
+            img_path: Caminho para a imagem
+            
+        Returns:
+            Tupla (vetor de características, índice original)
+        """
+        try:
+            image = io.imread(str(img_path))
+            
+            if len(image.shape) == 3:
+                image = color.rgb2gray(image)
+            
+            if image.shape[:2] != TARGET_SIZE:
+                image = resize(image, TARGET_SIZE, preserve_range=True)
+            
+            lbp = self._calculate_lbp(image)
+            hist = self._calculate_histogram(lbp)
+            return hist
+            
+        except Exception as e:
+            logger.error(f"Erro ao extrair características de {img_path}: {e}")
+            return None
+    
+    def extract_batch(self, image_paths: List[Union[str, Path]], 
+                     show_progress: bool = True,
+                     n_jobs: int = -1) -> Tuple[np.ndarray, List[int]]:
+        """
+        Extrai características de um lote de imagens com paralelização.
         
         Args:
             image_paths: Lista de caminhos de imagens
             show_progress: Mostrar barra de progresso
+            n_jobs: Número de jobs paralelos (-1 = todos os cores)
             
         Returns:
-            Matriz de características (n_amostras, n_características)
+            Tupla (matriz de características, índices válidos)
+        """
+        if n_jobs == -1:
+            n_jobs = multiprocessing.cpu_count()
+        
+        if n_jobs == 1:
+            return self._extract_batch_sequential(image_paths, show_progress)
+        
+        logger.info(f"Extraindo características em paralelo com {n_jobs} workers...")
+        
+        results = Parallel(n_jobs=n_jobs, prefer="processes")(
+            delayed(self._extract_single)(img_path) 
+            for img_path in tqdm(image_paths, desc="Extraindo características")
+        )
+        
+        features = []
+        valid_indices = []
+        
+        for i, feat in enumerate(results):
+            if feat is not None:
+                features.append(feat)
+                valid_indices.append(i)
+        
+        if not features:
+            raise ValueError("Nenhuma característica válida extraída")
+        
+        logger.info(f"Extração concluída: {len(features)} imagens processadas")
+        
+        return np.array(features), valid_indices
+    
+    def _extract_batch_sequential(self, image_paths: List[Union[str, Path]], 
+                                  show_progress: bool = True) -> Tuple[np.ndarray, List[int]]:
+        """
+        Versão sequencial da extração (fallback).
         """
         features = []
         valid_indices = []
@@ -149,7 +213,7 @@ class LBPFeatureExtractor:
         iterator = tqdm(image_paths, desc="Extraindo características") if show_progress else image_paths
         
         for i, img_path in enumerate(iterator):
-            feat = self.extract_from_path(img_path)
+            feat = self._extract_single(img_path)
             if feat is not None:
                 features.append(feat)
                 valid_indices.append(i)
