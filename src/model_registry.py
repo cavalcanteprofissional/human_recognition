@@ -59,6 +59,7 @@ class ModelResult:
     best_params: Dict[str, Any] = field(default_factory=dict)
     cv_metrics: ModelMetrics = field(default_factory=ModelMetrics)
     cv_std: Dict[str, float] = field(default_factory=dict)
+    cv_fold_metrics: Dict[str, List[float]] = field(default_factory=dict)
     val_metrics: ModelMetrics = field(default_factory=ModelMetrics)
     test_metrics: ModelMetrics = field(default_factory=ModelMetrics)
     model: Optional[BaseEstimator] = None
@@ -70,6 +71,7 @@ class ModelResult:
             "best_params": self.best_params,
             "cv_metrics": self.cv_metrics.to_dict(),
             "cv_std": self.cv_std,
+            "cv_fold_metrics": self.cv_fold_metrics,
             "val_metrics": self.val_metrics.to_dict(),
             "test_metrics": self.test_metrics.to_dict()
         }
@@ -269,6 +271,7 @@ class ModelComparison:
                 best_params=result_data["best_params"],
                 cv_metrics=ModelMetrics.from_dict(result_data["cv_metrics"]),
                 cv_std=result_data["cv_std"],
+                cv_fold_metrics=result_data.get("cv_fold_metrics", {}),
                 val_metrics=ModelMetrics.from_dict(result_data["val_metrics"]),
                 test_metrics=ModelMetrics.from_dict(result_data["test_metrics"])
             )

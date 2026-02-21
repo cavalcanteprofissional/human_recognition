@@ -27,3 +27,6 @@ models/*.pkl
 # IDE
 .vscode/
 .ipynb_checkpoints/
+
+# Agent instructions (contém credenciais)
+AGENTS.md
