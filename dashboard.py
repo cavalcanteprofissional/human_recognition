@@ -398,6 +398,145 @@ def run_detection(video_placeholder, metrics_placeholder, history_placeholder):
         st.session_state.camera_active = False
 
 
+def render_tab_hyperparams():
+    st.markdown("## 🔧 Hiperparâmetros e Métricas")
+    
+    reports = load_reports()
+    if not reports:
+        st.warning("Nenhum relatório encontrado em `/reports`. Execute o treinamento primeiro.")
+        return
+    
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        selected_report = st.selectbox(
+            "Selecione o relatório:",
+            options=reports,
+            format_func=lambda p: f"{p.name} ({datetime.fromtimestamp(p.stat().st_mtime).strftime('%d/%m/%Y %H:%M')})",
+            index=0,
+            key="hyper_report"
+        )
+    with col2:
+        if st.button("🔄 Atualizar", use_container_width=True, key="hyper_refresh"):
+            st.rerun()
+    
+    data = load_report_data(selected_report)
+    results = data.get("results", [])
+    ranking = data.get("ranking", {})
+    
+    if not results:
+        st.warning("Relatório vazio.")
+        return
+    
+    best_model_name = ranking.get("test_accuracy", [""])[0] if ranking else ""
+    
+    st.markdown("### 📋 Tabela Comparativa")
+    
+    table_data = []
+    for r in results:
+        name = r.get("model_name", "unknown")
+        best_params = r.get("best_params", {})
+        cv_m = r.get("cv_metrics", {})
+        cv_std = r.get("cv_std", {})
+        val_m = r.get("val_metrics", {})
+        test_m = r.get("test_metrics", {})
+        
+        params_str = ", ".join([f"{k}={v}" for k, v in best_params.items()]) if best_params else "N/A"
+        if len(params_str) > 60:
+            params_str = params_str[:57] + "..."
+        
+        table_data.append({
+            "Modelo": name.replace("_", " ").title(),
+            "Hiperparâmetros": params_str,
+            "CV Acc": f"{cv_m.get('accuracy', 0):.4f} ± {cv_std.get('accuracy', 0):.4f}",
+            "Val Acc": f"{val_m.get('accuracy', 0):.4f}",
+            "Test Acc": f"{test_m.get('accuracy', 0):.4f}",
+            "Test F1": f"{test_m.get('f1_score', 0):.4f}",
+            "_best_model": name == best_model_name,
+            "_full_params": best_params,
+            "_model_name": name
+        })
+    
+    df = pd.DataFrame(table_data)
+    df_display = df.drop(columns=["_best_model", "_full_params", "_model_name"])
+    
+    def highlight_best(row):
+        if row.name < len(table_data) and table_data[row.name].get("_best_model"):
+            return ['background-color: #90EE90'] * len(row)
+        return [''] * len(row)
+    
+    styled_df = df_display.style.apply(highlight_best, axis=1)
+    st.dataframe(styled_df, use_container_width=True, hide_index=True)
+    
+    if best_model_name:
+        st.success(f"🏆 **Melhor modelo:** `{best_model_name.replace('_', ' ').title()}`")
+    
+    st.markdown("### 📖 Detalhes dos Hiperparâmetros")
+    
+    model_names = [r.get("model_name", "unknown") for r in results]
+    selected_model = st.selectbox(
+        "Selecione o modelo para ver detalhes:",
+        options=model_names,
+        format_func=lambda x: x.replace("_", " ").title(),
+        key="hyper_model_detail"
+    )
+    
+    model_data = next((r for r in results if r.get("model_name") == selected_model), None)
+    if model_data:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**🔧 Hiperparâmetros Otimizados**")
+            best_params = model_data.get("best_params", {})
+            if best_params:
+                params_json = json.dumps(best_params, indent=2, ensure_ascii=False)
+                st.code(params_json, language="json")
+            else:
+                st.info("Sem hiperparâmetros registrados.")
+        
+        with col2:
+            st.markdown("**📊 Métricas Completas**")
+            metrics = {
+                "CV Accuracy": model_data.get("cv_metrics", {}).get("accuracy", 0),
+                "CV Std": model_data.get("cv_std", {}).get("accuracy", 0),
+                "Val Accuracy": model_data.get("val_metrics", {}).get("accuracy", 0),
+                "Val F1": model_data.get("val_metrics", {}).get("f1_score", 0),
+                "Test Accuracy": model_data.get("test_metrics", {}).get("accuracy", 0),
+                "Test F1": model_data.get("test_metrics", {}).get("f1_score", 0),
+                "Test Precision": model_data.get("test_metrics", {}).get("precision", 0),
+                "Test Recall": model_data.get("test_metrics", {}).get("recall", 0),
+            }
+            st.json(metrics)
+    
+    st.markdown("---")
+    st.markdown("### 📥 Exportar")
+    
+    export_data = []
+    for r in results:
+        export_data.append({
+            "model_name": r.get("model_name", "unknown"),
+            "model_type": r.get("model_type", "single"),
+            **{f"param_{k}": v for k, v in r.get("best_params", {}).items()},
+            "cv_accuracy": r.get("cv_metrics", {}).get("accuracy", 0),
+            "cv_std": r.get("cv_std", {}).get("accuracy", 0),
+            "val_accuracy": r.get("val_metrics", {}).get("accuracy", 0),
+            "val_f1": r.get("val_metrics", {}).get("f1_score", 0),
+            "test_accuracy": r.get("test_metrics", {}).get("accuracy", 0),
+            "test_f1": r.get("test_metrics", {}).get("f1_score", 0),
+            "test_precision": r.get("test_metrics", {}).get("precision", 0),
+            "test_recall": r.get("test_metrics", {}).get("recall", 0),
+        })
+    
+    export_df = pd.DataFrame(export_data)
+    csv = export_df.to_csv(index=False).encode('utf-8')
+    json_export = json.dumps(export_data, indent=2, ensure_ascii=False)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.download_button("📥 Baixar CSV", csv, "hyperparams_metrics.csv", "text/csv")
+    with col2:
+        st.download_button("📥 Baixar JSON", json_export, "hyperparams_metrics.json", "application/json")
+
+
 def render_tab_analysis():
     st.markdown("## 📉 Análise Visual")
     
@@ -492,9 +631,10 @@ def main():
     st.title("👤 Human Recognition Dashboard")
     st.markdown("Sistema de reconhecimento de silhueta humana")
     
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "📊 Métricas Gerais",
         "📈 Métricas por Fold",
+        "🔧 Hiperparâmetros",
         "🎥 Detecção em Tempo Real",
         "📉 Análise Visual",
         "⚙️ Config/Sobre"
@@ -507,12 +647,15 @@ def main():
         render_tab_metrics_fold()
     
     with tab3:
-        render_tab_detection()
+        render_tab_hyperparams()
     
     with tab4:
-        render_tab_analysis()
+        render_tab_detection()
     
     with tab5:
+        render_tab_analysis()
+    
+    with tab6:
         render_tab_config()
 
 

@@ -13,6 +13,31 @@
 
 ---
 
+## 📑 Sumário
+
+- [Sobre o Projeto](#-sobre-o-projeto)
+- [Objetivos Acadêmicos](#-objetivos-acadêmicos)
+- [Origem do Dataset](#-origem-do-dataset)
+- [Começando](#-começando)
+  - [Pré-requisitos](#pré-requisitos)
+  - [Instalação](#instalação)
+- [Estrutura do Projeto](#-estrutura-do-projeto)
+- [Funcionalidades](#-funcionalidades)
+- [Dashboard Interativo](#-dashboard-interativo)
+  - [Tab 1: Métricas Gerais](#tab-1--métricas-gerais)
+  - [Tab 2: Métricas por Fold](#tab-2--métricas-por-fold)
+  - [Tab 3: Hiperparâmetros e Métricas](#tab-3--hiperparâmetros-e-métricas)
+  - [Tab 4: Detecção em Tempo Real](#tab-4--detecção-em-tempo-real)
+  - [Tab 5: Análise Visual](#tab-5--análise-visual)
+  - [Tab 6: Config/Sobre](#tab-6--configsobre)
+- [Como Usar](#-como-usar)
+- [Integração com Câmera Yoosee](#-integração-com-câmera-yoosee)
+- [Solução de Problemas](#-solução-de-problemas)
+- [Resultados Esperados](#-resultados-esperados)
+- [Licença](#-licença)
+
+---
+
 ## 📋 Sobre o Projeto
 
 Este projeto implementa um sistema completo de reconhecimento de silhueta humana utilizando técnicas clássicas de Visão Computacional e Machine Learning. O sistema é capaz de:
@@ -148,7 +173,7 @@ human_recognition/
 ├── AGENTS.md                 # Instruções para agentes
 ├── LICENSE                   # Licença MIT
 ├── run.py                    # Script principal
-├── dashboard.py              # Dashboard Streamlit (5 tabs)
+├── dashboard.py              # Dashboard Streamlit (6 tabs)
 │
 ├── data/                     # Dados do projeto
 │   ├── raw/                  # Dataset original
@@ -245,7 +270,7 @@ human_recognition/
 
 ## 📊 Dashboard Interativo
 
-O dashboard foi desenvolvido com **Streamlit** e possui **5 abas (tabs)** para navegação organizada das funcionalidades. Acesse via:
+O dashboard foi desenvolvido com **Streamlit** e possui **6 abas (tabs)** para navegação organizada das funcionalidades. Acesse via:
 
 ```bash
 streamlit run dashboard.py
@@ -315,7 +340,41 @@ streamlit run dashboard.py
 
 ---
 
-### Tab 3: 🎥 Detecção em Tempo Real
+### Tab 3: 🔧 Hiperparâmetros e Métricas
+
+**Objetivo:** Visualizar e comparar hiperparâmetros otimizados de cada modelo.
+
+| Elemento | Descrição |
+|----------|-----------|
+| **Seletor de Relatórios** | Lista todos os arquivos JSON em `/reports` |
+| **Tabela Comparativa** | Hiperparâmetros + métricas CV/Val/Test |
+| **Destaque do Melhor** | Modelo com maior acurácia destacado em verde |
+| **Detalhes por Modelo** | JSON expandido dos hiperparâmetros |
+| **Exportar** | Download CSV e JSON completo |
+
+**Métricas Exibidas:**
+
+| Coluna | Descrição |
+|--------|-----------|
+| Modelo | Nome do classificador |
+| Hiperparâmetros | Parâmetros otimizados via GridSearchCV |
+| CV Acc | Acurácia média da validação cruzada ± std |
+| Val Acc | Acurácia no conjunto de validação |
+| Test Acc | Acurácia no conjunto de teste |
+| Test F1 | F1-Score no conjunto de teste |
+
+**Exemplo de Hiperparâmetros:**
+
+| Modelo | Hiperparâmetros Otimizados |
+|--------|---------------------------|
+| Random Forest | `n_estimators=50, max_depth=None, min_samples_leaf=4` |
+| SVM | `C=10, kernel=rbf, gamma=scale` |
+| XGBoost | `n_estimators=50, max_depth=5, learning_rate=0.1` |
+| LightGBM | `n_estimators=100, max_depth=5, learning_rate=0.01` |
+
+---
+
+### Tab 4: 🎥 Detecção em Tempo Real
 
 **Objetivo:** Executar detecção ao vivo com webcam ou câmera Yoosee.
 
@@ -354,7 +413,7 @@ streamlit run dashboard.py
 
 ---
 
-### Tab 4: 📉 Análise Visual
+### Tab 5: 📉 Análise Visual
 
 **Objetivo:** Visualizações gráficas dos resultados de treinamento.
 
@@ -382,7 +441,7 @@ streamlit run dashboard.py
 
 ---
 
-### Tab 5: ⚙️ Config/Sobre
+### Tab 6: ⚙️ Config/Sobre
 
 **Objetivo:** Configurações do sistema e informações do projeto.
 
