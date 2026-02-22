@@ -16,7 +16,7 @@
 ## 📑 Sumário
 
 - [Sobre o Projeto](#-sobre-o-projeto)
-- [Objetivos Acadêmicos](#-objetivos-acadêmicos)
+- [Fluxo de Dados](#-fluxo-de-dados)
 - [Origem do Dataset](#-origem-do-dataset)
 - [Começando](#-começando)
   - [Pré-requisitos](#pré-requisitos)
@@ -50,18 +50,64 @@ Este projeto implementa um sistema completo de reconhecimento de silhueta humana
 
 ---
 
-## 🎯 Objetivos Acadêmicos
+## 🔄 Fluxo de Dados
 
-Este projeto foi desenvolvido como Trabalho Final para a disciplina de Processamento de Imagem e Visão Computacional, atendendo aos seguintes requisitos:
+```mermaid
+flowchart TB
+    subgraph FONTE["📥 Fonte de Dados"]
+        KAGGLE[("Kaggle Dataset<br/>921 imagens 256×256")]
+    end
 
-- ✅ Implementação de algoritmo do zero (não usar soluções prontas)
-- ✅ Dataset público e bem documentado
-- ✅ Extração manual de características (LBP)
-- ✅ Treinamento com variação de hiperparâmetros
-- ✅ Aplicação em tempo real com webcam/câmera IP
-- ✅ Dashboard interativo com métricas e visualizações
-- ✅ Documentação completa do pipeline
-- ✅ Paralelização para otimização de performance
+    subgraph PREP["🔧 Pré-processamento"]
+        DOWNLOAD["python run.py --setup"]
+        RESIZE["Resize → 256×256"]
+        GRAY["Conversão Grayscale"]
+    end
+
+    subgraph FEATURES["🎯 Extração LBP"]
+        LBP["Local Binary Patterns<br/>radius=1, points=8<br/>method='uniform'"]
+        FEAT["59 features/imagem"]
+    end
+
+    subgraph SPLIT["📊 Divisão dos Dados"]
+        TRAIN["Treino 70%"]
+        VAL["Validação 15%"]
+        TEST["Teste 15%"]
+    end
+
+    subgraph TRAINING["🤖 Treinamento"]
+        GRID["GridSearchCV<br/>5-fold CV"]
+        MODELS["8 Classificadores<br/>+ Ensemble"]
+    end
+
+    subgraph OUTPUT["📁 Saída"]
+        PKL[("models/*.pkl")]
+        JSON[("reports/*.json")]
+        PNG[("reports/*.png")]
+    end
+
+    subgraph APP["🚀 Aplicação"]
+        DETECT["Detecção Tempo Real"]
+        WEBCAM["Webcam"]
+        YOOSEE["Câmera Yoosee"]
+        DASH["Dashboard Streamlit"]
+    end
+
+    KAGGLE --> DOWNLOAD
+    DOWNLOAD --> RESIZE
+    RESIZE --> GRAY
+    GRAY --> LBP
+    LBP --> FEAT
+    FEAT --> TRAIN & VAL & TEST
+    TRAIN --> GRID
+    VAL --> GRID
+    GRID --> MODELS
+    MODELS --> PKL & JSON & PNG
+    PKL --> DETECT
+    DETECT --> WEBCAM & YOOSEE
+    JSON --> DASH
+    PKL --> DASH
+```
 
 ---
 
