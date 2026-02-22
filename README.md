@@ -604,5 +604,9 @@ Distribuído sob a licença MIT.
 ---
 
 <p align="center">
-  Desenvolvido por Lucas Cavalcante dos Santos
+  Desenvolvido por <strong>Lucas Cavalcante dos Santos</strong>
+</p>
+
+<p align="center">
+  <strong>Versão:</strong> 1.1.0 &nbsp;|&nbsp; <strong>Última feature:</strong> Tab de Hiperparâmetros no Dashboard
 </p>
