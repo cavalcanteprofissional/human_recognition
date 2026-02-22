@@ -44,15 +44,70 @@ Este projeto foi desenvolvido como Trabalho Final para a disciplina de Processam
 
 ---
 
+## 📦 Origem do Dataset
+
+### Human Detection Dataset
+
+**Fonte:** [Kaggle - constantinwerner/human-detection-dataset](https://www.kaggle.com/datasets/constantinwerner/human-detection-dataset)
+
+### Descrição
+
+O dataset utilizado neste projeto é o **Human Detection Dataset**, um conjunto de imagens públicas desenvolvido para tarefas de classificação binária de detecção humana. O dataset foi escolhido por sua adequação aos requisitos acadêmicos do projeto:
+
+| Característica | Descrição |
+|----------------|-----------|
+| **Total de Imagens** | 921 imagens |
+| **Resolução** | 256 × 256 pixels |
+| **Formato** | PNG (escala de cinza e RGB) |
+| **Classes** | 2 (binário) |
+| **Licença** | CC0 - Domínio Público |
+
+### Estrutura de Classes
+
+```
+human-detection-dataset/
+├── 0/                    # Classe: Sem Humano
+│   ├── image_001.png
+│   ├── image_002.png
+│   └── ... (imagens de cenas vazias, objetos, backgrounds)
+│
+└── 1/                    # Classe: Com Humano
+    ├── image_001.png
+    ├── image_002.png
+    └── ... (imagens contendo silhuetas/pessoas)
+```
+
+| Classe | Descrição | Exemplos |
+|--------|-----------|----------|
+| **0 (no_human)** | Cenas sem presença humana | Ambientes vazios, objetos isolados, paisagens, interiores |
+| **1 (human)** | Cenas com presença humana | Pessoas completas, silhuetas, grupos |
+
+### Distribuição dos Dados
+
+O dataset é dividido utilizando estratificação para manter o balanceamento:
+
+| Conjunto | Proporção | Quantidade (~) |
+|----------|-----------|----------------|
+| Treino | 70% | ~645 imagens |
+| Validação | 15% | ~138 imagens |
+| Teste | 15% | ~138 imagens |
+
+### Justificativa de Escolha
+
+1. **Dataset Público**: Disponível no Kaggle, sem restrições de uso acadêmico
+2. **Bem Documentado**: Metadados claros sobre coleta e anotação
+3. **Tamanho Adequado**: Suficiente para treinamento, pequeno para iteração rápida
+4. **Balanceamento**: Distribuição aproximadamente equilibrada entre classes
+5. **Variabilidade**: Diversidade de cenários, iluminação e poses
+
+---
+
 ## 🚀 Começando
 
 ### Pré-requisitos
 - Python 3.9+
-- Poetry (gerenciador de dependências)
 - Webcam ou Câmera IP Yoosee
 - Conta no Kaggle (para download do dataset)
-- PyAV (`pip install av`) - para suporte a autenticação Digest RTSP
-- XGBoost e LightGBM (`pip install xgboost lightgbm`) - para modelos avançados
 
 ### Instalação
 
@@ -62,17 +117,12 @@ git clone https://github.com/seu-usuario/human_recognition.git
 cd human_recognition
 ```
 
-2. Instale as dependências com Poetry:
+2. Instale as dependências:
 ```bash
-poetry install
+pip install -r requirements.txt
 ```
 
-3. Ative o ambiente virtual:
-```bash
-poetry shell
-```
-
-4. Configure as variáveis de ambiente:
+3. Configure as variáveis de ambiente:
 
 Crie um arquivo `.env` na raiz do projeto:
 
@@ -85,19 +135,19 @@ KAGGLE_KEY=sua_chave_kaggle
 YOOSEE_IP=192.168.100.49
 YOOSEE_PORT=554
 YOOSEE_USERNAME=admin
-YOOSEE_PASSWORD=HonkaiImpact3rd
+YOOSEE_PASSWORD=sua_senha
 YOOSEE_STREAM=onvif1
 ```
 
 ---
 
-## 📦 Estrutura do Projeto
+## 📂 Estrutura do Projeto
 
 ```
 human_recognition/
 ├── .env                      # Variáveis de ambiente
 ├── .gitignore                # Arquivos ignorados pelo git
-├── pyproject.toml            # Dependências do Poetry
+├── requirements.txt          # Dependências Python
 ├── README.md                 # Este arquivo
 ├── AGENTS.md                 # Instruções para agentes
 ├── LICENSE                   # Licença MIT
@@ -194,15 +244,181 @@ human_recognition/
 | pencil | Efeito de desenho a lápis |
 | none | Sem filtro |
 
-### 7. Dashboard Interativo (5 Tabs)
+---
 
-| Tab | Funcionalidade |
-|-----|----------------|
-| 📊 Métricas Gerais | Tabela com métricas de todos os modelos (CV avg±std, Test) |
-| 📈 Métricas por Fold | Detalhamento fold-a-fold com média e desvio padrão |
-| 🎥 Detecção em Tempo Real | Webcam + Yoosee com filtros |
-| 📉 Análise Visual | Gráficos comparativos e ranking |
-| ⚙️ Config/Sobre | Configuração Yoosee e informações do projeto |
+## 📊 Dashboard Interativo
+
+O dashboard foi desenvolvido com **Streamlit** e possui **5 abas (tabs)** para navegação organizada das funcionalidades. Acesse via:
+
+```bash
+streamlit run dashboard.py
+```
+
+### Tab 1: 📊 Métricas Gerais
+
+**Objetivo:** Visão consolidada e comparativa de todos os modelos treinados.
+
+| Elemento | Descrição |
+|----------|-----------|
+| **Seletor de Relatórios** | Lista todos os arquivos JSON em `/reports` ordenados por data |
+| **Tabela Comparativa** | Exibe métricas de todos os modelos lado a lado |
+| **Destaque do Melhor** | Indica o modelo com maior acurácia |
+| **Download CSV** | Exporta tabela para análise externa |
+
+**Métricas Exibidas:**
+
+| Coluna | Descrição |
+|--------|-----------|
+| Modelo | Nome do classificador |
+| Accuracy (CV) | Média da validação cruzada ± desvio padrão |
+| Accuracy (Test) | Acurácia no conjunto de teste |
+| Precision | Precisão (classe positiva) |
+| Recall | Revocação (classe positiva) |
+| F1-Score | Média harmônica Precision/Recall |
+| Tempo (s) | Tempo de treinamento |
+
+**Exemplo de Visualização:**
+```
+┌─────────────────┬──────────────┬───────────────┬───────────┐
+│ Modelo          │ Acc (CV)     │ Acc (Test)    │ F1-Score  │
+├─────────────────┼──────────────┼───────────────┼───────────┤
+│ Random Forest   │ 0.85 ± 0.02  │ 0.87          │ 0.86      │
+│ XGBoost         │ 0.84 ± 0.03  │ 0.86          │ 0.85      │
+│ SVM             │ 0.83 ± 0.02  │ 0.84          │ 0.83      │
+└─────────────────┴──────────────┴───────────────┴───────────┘
+```
+
+---
+
+### Tab 2: 📈 Métricas por Fold
+
+**Objetivo:** Análise detalhada fold-a-fold da validação cruzada.
+
+| Elemento | Descrição |
+|----------|-----------|
+| **Seletor de Modelo** | Escolha qual modelo analisar |
+| **Tabela por Fold** | Métricas individuais de cada fold |
+| **Linha de Média** | Média das métricas across folds |
+| **Linha de Std** | Desvio padrão das métricas |
+| **Gráfico de Barras** | Visualização Accuracy e F1 por fold |
+
+**Estrutura da Tabela:**
+
+| Fold | Accuracy | Precision | Recall | F1-Score |
+|------|----------|-----------|--------|----------|
+| 1 | 0.85 | 0.84 | 0.86 | 0.85 |
+| 2 | 0.82 | 0.81 | 0.83 | 0.82 |
+| 3 | 0.87 | 0.88 | 0.86 | 0.87 |
+| 4 | 0.84 | 0.83 | 0.85 | 0.84 |
+| 5 | 0.86 | 0.85 | 0.87 | 0.86 |
+| **Média** | **0.848** | **0.842** | **0.854** | **0.848** |
+| **Std** | **0.018** | **0.024** | **0.014** | **0.018** |
+
+**Importante:** Esta tab requer treinamento via `--train-advanced` para gerar `cv_fold_metrics`.
+
+---
+
+### Tab 3: 🎥 Detecção em Tempo Real
+
+**Objetivo:** Executar detecção ao vivo com webcam ou câmera Yoosee.
+
+| Elemento | Descrição |
+|----------|-----------|
+| **Carregar Modelo** | Botão para carregar modelo treinado |
+| **Stream de Vídeo** | Exibição do feed ao vivo com detecções |
+| **Seletor de Filtro** | Escolha entre 6 filtros visuais |
+| **Métricas Live** | Classe predita e confiança em tempo real |
+| **Histórico** | Últimas 10 detecções realizadas |
+
+**Fontes de Vídeo Disponíveis:**
+
+| Fonte | Descrição | Requisito |
+|-------|-----------|-----------|
+| Webcam | Câmera local do computador | OpenCV |
+| Yoosee | Câmera IP via RTSP/ONVIF | Configurar IP/senha |
+
+**Filtros Disponíveis:**
+
+| Filtro | Efeito Visual |
+|--------|---------------|
+| none | Imagem original |
+| cartoon | Efeito cartoon com bordas realçadas |
+| edges | Apenas bordas (Canny) |
+| colormap | Mapa de cores (OCEAN) |
+| stylized | Efeito artístico suave |
+| pencil | Desenho a lápis |
+
+**Fluxo de Uso:**
+1. Clicar em "Carregar Modelo"
+2. Escolher fonte (Webcam ou Yoosee)
+3. Selecionar filtro desejado
+4. Observar detecções em tempo real
+5. Clicar "Parar" para encerrar
+
+---
+
+### Tab 4: 📉 Análise Visual
+
+**Objetivo:** Visualizações gráficas dos resultados de treinamento.
+
+| Elemento | Descrição |
+|----------|-----------|
+| **Gráfico Accuracy** | Barras comparando acurácia por modelo |
+| **Gráfico F1-Score** | Barras comparando F1-Score por modelo |
+| **Ranking** | Ordenação dos modelos por métrica |
+
+**Tipos de Visualização:**
+
+1. **Comparação de Acurácia:** Gráfico de barras horizontal com todos os modelos
+2. **Comparação F1-Score:** Gráfico de barras horizontal ordenado
+3. **Ranking por Métrica:** Lista ordenada para cada métrica disponível
+
+**Exemplo de Ranking:**
+```
+🏆 Ranking por test_accuracy:
+  1. random_forest
+  2. xgboost
+  3. gradient_boosting
+  4. svm
+  5. voting_ensemble
+```
+
+---
+
+### Tab 5: ⚙️ Config/Sobre
+
+**Objetivo:** Configurações do sistema e informações do projeto.
+
+| Seção | Conteúdo |
+|-------|----------|
+| **Câmera Yoosee** | Formulário para configurar IP, usuário, senha e stream |
+| **Dataset** | Contagem de imagens por classe |
+| **Sobre** | Descrição geral do projeto |
+
+**Configuração Yoosee:**
+
+| Campo | Descrição |
+|-------|-----------|
+| IP | Endereço IP da câmera (ex: 192.168.100.49) |
+| Usuário | Usuário para autenticação (padrão: admin) |
+| Senha | Senha de acesso |
+| Stream | Tipo de stream (onvif1, onvif2, live) |
+
+**Status do Dataset:**
+```
+┌─────────────┬──────────┐
+│ Classe      │ Imagens  │
+├─────────────┼──────────┤
+│ Humanos     │ 461      │
+│ Não Humanos │ 460      │
+└─────────────┴──────────┘
+```
+
+**Informações do Projeto:**
+- **Features:** LBP (Local Binary Patterns)
+- **Modelos:** Random Forest, XGBoost, SVM, KNN, etc.
+- **Validação:** 5-fold Cross-Validation
+- **Framework:** Streamlit + OpenCV + scikit-learn
 
 ---
 
@@ -210,121 +426,65 @@ human_recognition/
 
 ### 1. Setup Inicial
 ```bash
-poetry run python run.py --setup
+python run.py --setup
 ```
 
 ### 2. Treinar Modelo
 
-#### Treinamento Básico (Random Forest com GridSearchCV paralelizado)
+#### Treinamento Básico (Random Forest com GridSearchCV)
 ```bash
-poetry run python run.py --train
+python run.py --train
 ```
 
-#### Treinamento Avançado (Múltiplos Modelos Paralelizados)
+#### Treinamento Avançado (Múltiplos Modelos)
 ```bash
-# Treinar todos os 8 modelos + ensemble (paralelizado)
-poetry run python run.py --train-advanced
+# Treinar todos os 8 modelos + ensemble
+python run.py --train-advanced
 
 # Treinar modelos específicos
-poetry run python run.py --train-advanced --models random_forest,xgboost,svm
+python run.py --train-advanced --models random_forest,xgboost,svm
 
-# Com mais folds de validação cruzada
-poetry run python run.py --train-advanced --cv-folds 10
-
-# Treinamento sequencial (sem paralelização)
-poetry run python run.py --train-advanced --parallel false
-
-# Sem ensemble
-poetry run python run.py --train-advanced --no-ensemble
+# Com mais folds
+python run.py --train-advanced --cv-folds 10
 
 # Listar modelos disponíveis
-poetry run python run.py --list-models
+python run.py --list-models
 
-# Comparar resultados de treinamentos anteriores
-poetry run python run.py --compare-models
+# Comparar resultados
+python run.py --compare-models
 ```
 
 ### 3. Executar Dashboard
 ```bash
 streamlit run dashboard.py
 # ou
-poetry run python run.py --dashboard
+python run.py --dashboard
 ```
-Acesse: http://localhost:8501
 
 ### 4. Detecção em Tempo Real
 ```bash
-# Webcam com filtro cartoon
-poetry run python run.py --detect
+# Webcam
+python run.py --detect
 
 # Com filtro específico
-poetry run python run.py --detect --filter edges
-poetry run python run.py --detect --filter colormap
-```
+python run.py --detect --filter edges
 
-### 5. Análise de Resultados
-```bash
-poetry run python run.py --analyze reports/results_*.json
+# Câmera Yoosee
+python run.py --detect --source yoosee
 ```
 
 ---
 
 ## 📹 Integração com Câmera Yoosee
 
-### IP Dinâmico
+### Auto-Discovery
 ```bash
-# Buscar câmera automaticamente
-poetry run python run.py --auto-find-yoosee
+python run.py --auto-find-yoosee
 ```
 
 ### Detecção com Auto-Discovery
 ```bash
-poetry run python run.py --detect --source yoosee --auto-find-yoosee
-```
-
-### Detecção com IP Fixo
-```bash
-python run.py --detect --source yoosee --yoosee-ip 192.168.100.49
-```
-
-### Teste de Conexão
-```bash
-python tools/test_yoosee_connection.py --ip 192.168.100.49 --diagnose
-```
-
----
-
-## 🔧 Solução de Problemas
-
-### Câmera Yoosee não conecta
-
-1. **IP dinâmico** (recomendado):
-```bash
-python run.py --auto-find-yoosee
-```
-O sistema escaneia a rede automaticamente e atualiza o arquivo `.env`.
-
-2. **Problemas de autenticação**:
-- Verifique no app Yoosee se RTSP está habilitado
-- Confirme a senha correta
-- O modelo LB-CA128 requer autenticação Digest (suportada automaticamente)
-
-3. **Proxy PyAV**:
-Se o FFmpeg falhar (erro "Nonmatching transport"), o sistema usa automaticamente o proxy PyAV que implementa autenticação Digest nativamente.
-
-4. **Teste de diagnóstico**:
-```bash
-python tools/test_yoosee_connection.py --ip 192.168.100.49 --diagnose
-```
-
-### Teste Manual do Proxy
-
-```bash
-# Iniciar proxy
-python tools/rtsp_to_mjpeg.py --preview
-
-# Ou via API
-python tools/rtsp_to_mjpeg.py --ip 192.168.100.49 --user admin --password HonkaiImpact3rd
+python run.py --detect --source yoosee --auto-find-yoosee
 ```
 
 ### Modelos Yoosee e Caminhos RTSP
@@ -333,7 +493,32 @@ python tools/rtsp_to_mjpeg.py --ip 192.168.100.49 --user admin --password Honkai
 |--------|---------|
 | C100E | /onvif1 |
 | J1080P | /onvif1, /onvif2 |
-| LB-CA128 | /onvif1 (Digest) |
+| LB-CA128 | /onvif1 (Digest Auth) |
+
+---
+
+## 🔧 Solução de Problemas
+
+### Câmera Yoosee não conecta
+
+```bash
+# Buscar IP automaticamente
+python run.py --auto-find-yoosee
+
+# Teste de diagnóstico
+python tools/test_yoosee_connection.py --ip 192.168.100.49 --diagnose
+```
+
+### Modelos não carregam
+```bash
+pip install xgboost lightgbm
+```
+
+### Métricas por fold não aparecem
+```bash
+# Treine novamente com treinamento avançado
+python run.py --train-advanced
+```
 
 ---
 
@@ -343,7 +528,7 @@ python tools/rtsp_to_mjpeg.py --ip 192.168.100.49 --user admin --password Honkai
 - **FPS (Webcam)**: ~30 FPS
 - **FPS (Yoosee)**: ~15-20 FPS
 - **Latência**: < 100ms
-- **Speedup Paralelização**: 2-4x mais rápido em máquinas multi-core
+- **Speedup Paralelização**: 2-4x em máquinas multi-core
 
 ---
 

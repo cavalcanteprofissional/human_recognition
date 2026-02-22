@@ -1,0 +1,15 @@
+opencv-python
+numpy
+pandas
+scikit-learn
+scikit-image
+joblib
+matplotlib
+seaborn
+tqdm
+streamlit
+xgboost
+lightgbm
+av
+python-dotenv
+requests
