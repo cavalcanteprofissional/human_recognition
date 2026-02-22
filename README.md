@@ -1,11 +1,7 @@
 # Human Recognition Project
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/opencv/opencv/master/doc/opencv-logo.png" width="300" alt="OpenCV Logo"/>
-</p>
-
-<p align="center">
-  <strong>Projeto de Visão Computacional para reconhecimento de silhueta humana em tempo real</strong>
+  <strong>Projeto de Visão Computacional para o Reconhecimento de Silhueta Humana em Tempo Real</strong>
 </p>
 
 <p align="center">
@@ -132,11 +128,11 @@ KAGGLE_USERNAME=seu_usuario_kaggle
 KAGGLE_KEY=sua_chave_kaggle
 
 # Configurações da Câmera Yoosee
-YOOSEE_IP=192.168.100.49
-YOOSEE_PORT=554
+YOOSEE_IP=ip.da.camera.aqui (ou busque dinamicamente)
+YOOSEE_PORT=554 (554 por padrão)
 YOOSEE_USERNAME=admin
 YOOSEE_PASSWORD=sua_senha
-YOOSEE_STREAM=onvif1
+YOOSEE_STREAM=onvif1 (exemplo)
 ```
 
 ---
@@ -199,6 +195,7 @@ human_recognition/
 - **Validação Cruzada**: 5-fold CV com Grid Search de hiperparâmetros
 - **Métricas**: Acurácia, Precisão, Recall, F1-Score, AUC-ROC, Matriz de Confusão
 - **Métricas por Fold**: Captura detalhada de cada fold da validação cruzada
+- **Seleção de Modelo**: Configurável via `--selection-metric` (accuracy, f1_score, precision, recall)
 
 ### 2. Paralelização (Otimização de Performance)
 
@@ -447,6 +444,15 @@ python run.py --train-advanced --models random_forest,xgboost,svm
 # Com mais folds
 python run.py --train-advanced --cv-folds 10
 
+# Selecionar melhor modelo por F1-Score (em vez de accuracy)
+python run.py --train-advanced --selection-metric f1_score
+
+# Selecionar por Recall (minimiza falsos negativos)
+python run.py --train-advanced --selection-metric recall
+
+# Selecionar por Precision (minimiza falsos positivos)
+python run.py --train-advanced --selection-metric precision
+
 # Listar modelos disponíveis
 python run.py --list-models
 
@@ -534,10 +540,10 @@ python run.py --train-advanced
 
 ## 📄 Licença
 
-Este projeto é para fins educacionais. Distribuído sob a licença MIT.
+Distribuído sob a licença MIT.
 
 ---
 
 <p align="center">
-  Desenvolvido para disciplina de Visão Computacional
+  Desenvolvido por Lucas Cavalcante dos Santos
 </p>

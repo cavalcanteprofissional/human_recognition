@@ -375,7 +375,8 @@ class AdvancedTrainer:
                         model_names: List[str] = None,
                         include_ensemble: bool = True,
                         n_jobs: int = -1,
-                        parallel: bool = True) -> ModelComparison:
+                        parallel: bool = True,
+                        selection_metric: str = 'accuracy') -> ModelComparison:
         """
         Treina todos os modelos e retorna comparação.
         
@@ -387,6 +388,7 @@ class AdvancedTrainer:
             include_ensemble: Se True, cria ensemble no final
             n_jobs: Número de jobs paralelos (-1 = todos os cores)
             parallel: Se True, usa paralelização para treinar modelos
+            selection_metric: Métrica para selecionar o melhor modelo
         """
         if model_names is None:
             model_names = ModelRegistry.list_models()
@@ -472,12 +474,12 @@ class AdvancedTrainer:
                 except Exception as e:
                     logger.error(f"Erro ao criar ensemble: {e}")
         
-        best = self.comparison.get_best_model(metric="accuracy", dataset="val")
+        best = self.comparison.get_best_model(metric=selection_metric, dataset="val")
         if best:
             self.best_model = best.model
             self.best_model_name = best.model_name
             logger.info(f"\n{'*'*60}")
-            logger.info(f"MELHOR MODELO: {best.model_name}")
+            logger.info(f"MELHOR MODELO (por {selection_metric}): {best.model_name}")
             logger.info(f"Test Accuracy: {best.test_metrics.accuracy:.4f}")
             logger.info(f"Test F1-Score: {best.test_metrics.f1_score:.4f}")
             logger.info(f"{'*'*60}\n")

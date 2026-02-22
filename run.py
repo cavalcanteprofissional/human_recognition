@@ -30,7 +30,8 @@ def run_dashboard():
     cmd = [sys.executable, "-m", "streamlit", "run", str(dashboard_path)]
     subprocess.run(cmd)
 
-def run_advanced_training(models: str = None, cv_folds: int = 5, no_ensemble: bool = False):
+def run_advanced_training(models: str = None, cv_folds: int = 5, 
+                         no_ensemble: bool = False, selection_metric: str = 'accuracy'):
     """
     Executa treinamento avançado com múltiplos modelos.
     
@@ -38,6 +39,7 @@ def run_advanced_training(models: str = None, cv_folds: int = 5, no_ensemble: bo
         models: Lista de modelos separados por vírgula (ou None para todos)
         cv_folds: Número de folds na validação cruzada
         no_ensemble: Se True, não cria ensemble
+        selection_metric: Métrica para selecionar o melhor modelo
     """
     from src.train_advanced import AdvancedTrainer
     from src.model_registry import ModelRegistry
@@ -79,7 +81,8 @@ def run_advanced_training(models: str = None, cv_folds: int = 5, no_ensemble: bo
         X_val, y_val,
         X_test, y_test,
         model_names=model_names,
-        include_ensemble=not no_ensemble
+        include_ensemble=not no_ensemble,
+        selection_metric=selection_metric
     )
     
     print("\n" + comparison.summary())
@@ -138,6 +141,9 @@ def main():
                        help='Número de folds na validação cruzada (padrão: 5)')
     parser.add_argument('--no-ensemble', action='store_true',
                        help='Não criar ensemble de modelos')
+    parser.add_argument('--selection-metric', type=str, default='accuracy',
+                       choices=['accuracy', 'f1_score', 'precision', 'recall'],
+                       help='Métrica para selecionar o melhor modelo (padrão: accuracy)')
     
     # Comparação
     parser.add_argument('--compare-models', action='store_true',
@@ -214,7 +220,8 @@ def main():
         run_advanced_training(
             models=args.models,
             cv_folds=args.cv_folds,
-            no_ensemble=args.no_ensemble
+            no_ensemble=args.no_ensemble,
+            selection_metric=args.selection_metric
         )
     
     # Comparar modelos
