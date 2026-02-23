@@ -1,4 +1,5 @@
 ---
+<<<<<<< HEAD
 title: Human Recognition Dashboard
 emoji: 👤
 colorFrom: blue
@@ -674,6 +675,8 @@ Distribuído sob a licença MIT.
   <strong>Versão:</strong> 2.0.0 &nbsp;|&nbsp; <strong>Última feature:</strong> Migração para Gradio + Hugging Face Spaces
 </p>
 =======
+=======
+>>>>>>> 54f6c182c2343517c4ffebaadd4196a8fa8b5079
 title: Human Recognition
 emoji: 📚
 colorFrom: gray
@@ -686,4 +689,7 @@ license: mit
 ---
 
 Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+<<<<<<< HEAD
+>>>>>>> 54f6c182c2343517c4ffebaadd4196a8fa8b5079
+=======
 >>>>>>> 54f6c182c2343517c4ffebaadd4196a8fa8b5079
