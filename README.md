@@ -8,6 +8,7 @@
   <img src="https://img.shields.io/badge/Python-3.9+-blue.svg" alt="Python Version"/>
   <img src="https://img.shields.io/badge/OpenCV-4.8+-green.svg" alt="OpenCV"/>
   <img src="https://img.shields.io/badge/Streamlit-1.28+-red.svg" alt="Streamlit"/>
+  <img src="https://img.shields.io/badge/Gradio-4.44+-orange.svg" alt="Gradio"/>
   <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License"/>
 </p>
 
@@ -35,6 +36,35 @@
 - [Solução de Problemas](#-solução-de-problemas)
 - [Resultados Esperados](#-resultados-esperados)
 - [Licença](#-licença)
+
+---
+
+## 🔄 Fluxo de Dados
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           FLUXO DE DADOS                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────┐     ┌────────────────────┐     ┌────────────────────┐    │
+│  │   Kaggle     │────▶│   Processamento     │────▶│    Treinamento     │    │
+│  │   Dataset    │     │  (LBP Features)    │     │   (ML Models)     │    │
+│  └──────────────┘     └────────────────────┘     └────────────────────┘    │
+│                                                         │                    │
+│                                                         ▼                    │
+│  ┌──────────────┐     ┌────────────────────┐     ┌────────────────────┐    │
+│  │   Upload     │◀────│   Detecção em     │◀────│     Modelo         │    │
+│  │   Imagem     │     │   Tempo Real       │     │    Treinado        │    │
+│  └──────────────┘     └────────────────────┘     └────────────────────┘    │
+│                               │                                             │
+│                               ▼                                             │
+│                      ┌────────────────────┐                                │
+│                      │   Dashboards       │                                │
+│                      │ Streamlit / Gradio│                                │
+│                      └────────────────────┘                                │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -572,13 +602,15 @@ python run.py --compare-models
 
 ### 3. Executar Dashboard
 ```bash
-# Streamlit (padrão)
+# Streamlit (padrão) - recomendado para local
 streamlit run streamlit.py
 # ou
 python run.py --dashboard
+python run.py --dashboard --dashboard-framework streamlit
 
-# Gradio (alternativo)
+# Gradio - alternativo
 python gradio.py
+python run.py --dashboard --dashboard-framework gradio
 ```
 
 ### 4. Detecção em Tempo Real
