@@ -234,7 +234,7 @@ human_recognition/
 ├── LICENSE                   # Licença MIT
 ├── run.py                    # Script principal
 ├── app.py                    # Ponto de entrada (HF Spaces)
-├── dashboard_gradio.py       # Dashboard Gradio (6 tabs)
+├── dashboard.py              # Dashboard Gradio (6 tabs)
 │
 ├── data/                     # Dados do projeto
 │   ├── raw/                  # Dataset original
