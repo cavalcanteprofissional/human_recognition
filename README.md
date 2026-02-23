@@ -673,3 +673,17 @@ Distribuído sob a licença MIT.
 <p align="center">
   <strong>Versão:</strong> 2.0.0 &nbsp;|&nbsp; <strong>Última feature:</strong> Migração para Gradio + Hugging Face Spaces
 </p>
+=======
+title: Human Recognition
+emoji: 📚
+colorFrom: gray
+colorTo: blue
+sdk: gradio
+sdk_version: 6.6.0
+app_file: app.py
+pinned: false
+license: mit
+---
+
+Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+>>>>>>> 54f6c182c2343517c4ffebaadd4196a8fa8b5079
