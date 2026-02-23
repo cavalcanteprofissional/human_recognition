@@ -366,7 +366,7 @@ def get_dataset_stats() -> Tuple[int, int]:
 
 
 def build_interface():
-    with gr.Blocks(title="Human Recognition Dashboard", theme=gr.themes.Soft()) as demo:
+    with gr.Blocks(title="Human Recognition Dashboard") as demo:
         gr.Markdown("# Human Recognition Dashboard")
         gr.Markdown("Sistema de reconhecimento de silhueta humana usando LBP + Machine Learning")
         
@@ -435,8 +435,7 @@ def build_interface():
                     y="Accuracy",
                     title="Accuracy por Fold",
                     x_title="Fold",
-                    y_title="Accuracy",
-                    interactive=False
+                    y_title="Accuracy"
                 )
                 
                 def update_models(report):
@@ -580,8 +579,7 @@ def build_interface():
                     y="Accuracy",
                     title="Accuracy por Modelo",
                     x_title="Modelo",
-                    y_title="Accuracy",
-                    interactive=False
+                    y_title="Accuracy"
                 )
                 
                 ranking_markdown = gr.Markdown()
@@ -652,4 +650,4 @@ def build_interface():
 
 if __name__ == "__main__":
     demo = build_interface()
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    demo.launch(server_name="0.0.0.0", server_port=7860, theme=gr.themes.Soft())
