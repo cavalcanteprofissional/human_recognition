@@ -39,35 +39,6 @@
 
 ---
 
-## 🔄 Fluxo de Dados
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           FLUXO DE DADOS                                    │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌──────────────┐     ┌────────────────────┐     ┌────────────────────┐    │
-│  │   Kaggle     │────▶│   Processamento     │────▶│    Treinamento     │    │
-│  │   Dataset    │     │  (LBP Features)    │     │   (ML Models)     │    │
-│  └──────────────┘     └────────────────────┘     └────────────────────┘    │
-│                                                         │                    │
-│                                                         ▼                    │
-│  ┌──────────────┐     ┌────────────────────┐     ┌────────────────────┐    │
-│  │   Upload     │◀────│   Detecção em     │◀────│     Modelo         │    │
-│  │   Imagem     │     │   Tempo Real       │     │    Treinado        │    │
-│  └──────────────┘     └────────────────────┘     └────────────────────┘    │
-│                               │                                             │
-│                               ▼                                             │
-│                      ┌────────────────────┐                                │
-│                      │   Dashboards       │                                │
-│                      │ Streamlit / Gradio│                                │
-│                      └────────────────────┘                                │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
 ## 📋 Sobre o Projeto
 
 Este projeto implementa um sistema completo de reconhecimento de silhueta humana utilizando técnicas clássicas de Visão Computacional e Machine Learning. O sistema é capaz de:
@@ -120,7 +91,7 @@ flowchart TB
         DETECT["Detecção Tempo Real"]
         WEBCAM["Webcam"]
         YOOSEE["Câmera Yoosee"]
-        DASH["Dashboard Gradio"]
+        DASH["Dashboard<br/>Streamlit / Gradio"]
     end
 
     KAGGLE --> DOWNLOAD
