@@ -18,8 +18,12 @@ from typing import Dict, List, Optional, Tuple
 from src.feature_extractor import LBPFeatureExtractor
 from src.config import MODELS_DIR, TARGET_SIZE, YOOSEE_CONFIG
 from src.yoosee_camera import YooseeCamera
+import os
 
 REPORTS_DIR = Path("reports")
+
+HF_SPACES = os.environ.get('SPACE_ID') is not None
+IS_CLOUD = HF_SPACES
 
 
 class HumanDetector:
@@ -324,6 +328,25 @@ def detect_from_webcam(image, filter_type: str) -> Tuple[np.ndarray, str, str]:
     return result_rgb, label, f"{conf:.1%}"
 
 
+def detect_from_image(image, filter_type: str) -> Tuple[np.ndarray, str, str]:
+    if image is None:
+        return np.zeros((256, 256, 3), dtype=np.uint8), "Nenhuma imagem", "0%"
+    
+    frame = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    
+    processed = detector.preprocess_frame(frame)
+    label, conf = detector.detect(processed)
+    
+    filtered = detector.apply_filter(frame, filter_type)
+    
+    color = (0, 255, 0) if label == "HUMANO" else (0, 0, 255)
+    cv2.putText(filtered, f"{label} ({conf:.1%})", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
+    
+    result_rgb = cv2.cvtColor(filtered, cv2.COLOR_BGR2RGB)
+    
+    return result_rgb, label, f"{conf:.1%}"
+
+
 def render_tab_analysis(report_choice: str) -> Tuple[pd.DataFrame, str]:
     report_path = get_report_path_from_choice(report_choice)
     if not report_path or not report_path.exists():
@@ -530,8 +553,9 @@ def build_interface():
                     outputs=download_btn_3
                 )
             
-            with gr.TabItem("Detecção"):
-                gr.Markdown("## Detecção em Tempo Real")
+            with gr.TabItem("📤 Upload de Imagem"):
+                gr.Markdown("## Detecção por Upload de Imagem")
+                gr.Markdown("Envie uma imagem para detectar presença humana (funciona na cloud)")
                 
                 if detector.model:
                     gr.Success("Modelo carregado com sucesso!")
@@ -540,11 +564,15 @@ def build_interface():
                 
                 with gr.Row():
                     with gr.Column(scale=2):
-                        input_image = gr.Image(label="Entrada", type="numpy")
-                        output_image = gr.Image(label="Saída com Detecção")
+                        upload_image = gr.Image(
+                            label="Envie uma imagem",
+                            type="numpy",
+                            sources=["upload"]
+                        )
+                        output_upload = gr.Image(label="Resultado")
                     
                     with gr.Column(scale=1):
-                        filter_dropdown = gr.Dropdown(
+                        upload_filter = gr.Dropdown(
                             label="Filtro",
                             choices=['none', 'cartoon', 'edges', 'colormap', 'stylized', 'pencil'],
                             value='none'
@@ -552,16 +580,63 @@ def build_interface():
                         
                         with gr.Group():
                             gr.Markdown("### Resultado")
-                            class_output = gr.Textbox(label="Classe", interactive=False)
-                            conf_output = gr.Textbox(label="Confiança", interactive=False)
+                            upload_class = gr.Textbox(label="Classe", interactive=False)
+                            upload_conf = gr.Textbox(label="Confiança", interactive=False)
                 
-                detect_btn = gr.Button("Detectar", variant="primary")
+                upload_btn = gr.Button("Detectar", variant="primary")
                 
-                detect_btn.click(
-                    fn=detect_from_webcam,
-                    inputs=[input_image, filter_dropdown],
-                    outputs=[output_image, class_output, conf_output]
+                upload_btn.click(
+                    fn=detect_from_image,
+                    inputs=[upload_image, upload_filter],
+                    outputs=[output_upload, upload_class, upload_conf]
                 )
+            
+            with gr.TabItem("📹 Webcam/Yoosee"):
+                gr.Markdown("## Detecção em Tempo Real (Webcam/Yoosee)")
+                
+                if IS_CLOUD:
+                    gr.Warning("⚠️ Esta funcionalidade está disponível apenas para uso local.")
+                    gr.Markdown("""
+                    **Para usar Detecção em Tempo Real:**
+                    
+                    1. Execute o projeto localmente: `python run.py --detect`
+                    2. Ou use a aba **"📤 Upload de Imagem"** para enviar fotos
+                    
+                    A detecção via webcam/Yoosee requer acesso direto ao dispositivo, que não está disponível no Hugging Face Spaces.
+                    """)
+                else:
+                    if detector.model:
+                        gr.Success("Modelo carregado com sucesso!")
+                    else:
+                        gr.Warning("Nenhum modelo encontrado. Execute o treinamento primeiro.")
+                    
+                    gr.Markdown("### Fonte de Vídeo")
+                    gr.Markdown("Use a aba **'📤 Upload de Imagem'** ou execute localmente com `python run.py --detect`")
+                    
+                    with gr.Row():
+                        with gr.Column(scale=2):
+                            input_image = gr.Image(label="Entrada (Webcam ou Upload)", type="numpy", sources=["webcam", "upload"])
+                            output_image = gr.Image(label="Saída com Detecção")
+                        
+                        with gr.Column(scale=1):
+                            filter_dropdown = gr.Dropdown(
+                                label="Filtro",
+                                choices=['none', 'cartoon', 'edges', 'colormap', 'stylized', 'pencil'],
+                                value='none'
+                            )
+                            
+                            with gr.Group():
+                                gr.Markdown("### Resultado")
+                                class_output = gr.Textbox(label="Classe", interactive=False)
+                                conf_output = gr.Textbox(label="Confiança", interactive=False)
+                    
+                    detect_btn = gr.Button("Detectar", variant="primary")
+                    
+                    detect_btn.click(
+                        fn=detect_from_webcam,
+                        inputs=[input_image, filter_dropdown],
+                        outputs=[output_image, class_output, conf_output]
+                    )
             
             with gr.TabItem("Análise Visual"):
                 gr.Markdown("## Análise Visual")
@@ -653,6 +728,5 @@ if __name__ == "__main__":
     demo.launch(
         server_name="0.0.0.0",
         server_port=7860,
-        inbrowser=True,
-        theme=gr.themes.Soft()
+        inbrowser=True
     )
