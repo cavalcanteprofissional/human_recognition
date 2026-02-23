@@ -27,7 +27,7 @@ def setup_project():
 def run_dashboard():
     """Executa o dashboard Streamlit."""
     import streamlit as st
-    from streamlit_dashboard import main as dashboard_main
+    from streamlit import main as dashboard_main
     dashboard_main()
 
 def run_advanced_training(models: str = None, cv_folds: int = 5, 

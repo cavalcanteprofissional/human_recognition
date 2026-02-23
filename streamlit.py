@@ -19,6 +19,8 @@ from src.config import MODELS_DIR, TARGET_SIZE, YOOSEE_CONFIG
 
 REPORTS_DIR = Path("reports")
 
+detector = None
+
 
 class HumanDetector:
     def __init__(self):
@@ -296,11 +298,16 @@ def detect_from_image(image, filter_type: str):
 
 
 def main():
+    global detector
+    
     st.set_page_config(
         page_title="Human Recognition Dashboard",
         page_icon="👤",
         layout="wide"
     )
+    
+    if detector is None:
+        detector = HumanDetector()
     
     st.title("👤 Human Recognition Dashboard")
     st.markdown("Sistema de reconhecimento de silhueta humana usando LBP + Machine Learning")

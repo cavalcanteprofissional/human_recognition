@@ -4,7 +4,7 @@ Ponto de entrada para Streamlit Dashboard.
 """
 
 import streamlit as st
-from streamlit_dashboard import main as dashboard_main, detector
+from streamlit import main as dashboard_main, detector
 
 if __name__ == "__main__":
     st.set_page_config(
