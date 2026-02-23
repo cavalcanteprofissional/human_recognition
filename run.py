@@ -25,10 +25,10 @@ def setup_project():
     logger.info("Projeto configurado com sucesso!")
 
 def run_dashboard():
-    """Executa o dashboard Streamlit."""
-    dashboard_path = Path(__file__).parent / "src" / "dashboard.py"
-    cmd = [sys.executable, "-m", "streamlit", "run", str(dashboard_path)]
-    subprocess.run(cmd)
+    """Executa o dashboard Gradio."""
+    from dashboard_gradio import build_interface
+    demo = build_interface()
+    demo.launch(server_name="0.0.0.0", server_port=7860)
 
 def run_advanced_training(models: str = None, cv_folds: int = 5, 
                          no_ensemble: bool = False, selection_metric: str = 'accuracy'):
@@ -172,7 +172,7 @@ def main():
     
     # Dashboard
     parser.add_argument('--dashboard', action='store_true',
-                       help='Executar dashboard Streamlit')
+                       help='Executar dashboard Gradio')
     
     # Análise
     parser.add_argument('--analyze', type=str,

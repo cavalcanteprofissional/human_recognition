@@ -1,3 +1,16 @@
+---
+title: Human Recognition Dashboard
+emoji: 👤
+colorFrom: blue
+colorTo: purple
+sdk: gradio
+sdk_version: 4.44.0
+app_file: app.py
+pinned: false
+license: mit
+short_description: Sistema de reconhecimento de silhueta humana usando LBP + ML
+---
+
 # Human Recognition Project
 
 <p align="center">
@@ -7,7 +20,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.9+-blue.svg" alt="Python Version"/>
   <img src="https://img.shields.io/badge/OpenCV-4.8+-green.svg" alt="OpenCV"/>
-  <img src="https://img.shields.io/badge/Streamlit-1.28+-red.svg" alt="Streamlit"/>
+  <img src="https://img.shields.io/badge/Gradio-4.0+-orange.svg" alt="Gradio"/>
   <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License"/>
 </p>
 
@@ -45,7 +58,7 @@ Este projeto implementa um sistema completo de reconhecimento de silhueta humana
 - Treinar múltiplos classificadores usando características LBP (Local Binary Patterns)
 - Detectar presença humana em tempo real via webcam ou câmera IP Yoosee
 - Aplicar 6 filtros criativos diferentes para visualização estilizada
-- Visualizar métricas detalhadas em dashboard interativo com Streamlit
+- Visualizar métricas detalhadas em dashboard interativo com Gradio
 - Processamento paralelo para otimização de performance
 
 ---
@@ -90,7 +103,7 @@ flowchart TB
         DETECT["Detecção Tempo Real"]
         WEBCAM["Webcam"]
         YOOSEE["Câmera Yoosee"]
-        DASH["Dashboard Streamlit"]
+        DASH["Dashboard Gradio"]
     end
 
     KAGGLE --> DOWNLOAD
@@ -119,7 +132,7 @@ flowchart TB
 
 ### Descrição
 
-O dataset utilizado neste projeto é o **Human Detection Dataset**, um conjunto de imagens públicas desenvolvido para tarefas de classificação binária de detecção humana. O dataset foi escolhido por sua adequação aos requisitos acadêmicos do projeto:
+O dataset utilizado neste projeto é o **Human Detection Dataset**, um conjunto de imagens públicas desenvolvido para tarefas de classificação binária de detecção humana.
 
 | Característica | Descrição |
 |----------------|-----------|
@@ -215,11 +228,13 @@ human_recognition/
 ├── .env                      # Variáveis de ambiente
 ├── .gitignore                # Arquivos ignorados pelo git
 ├── requirements.txt          # Dependências Python
+├── packages.txt              # Dependências do sistema (HF Spaces)
 ├── README.md                 # Este arquivo
 ├── AGENTS.md                 # Instruções para agentes
 ├── LICENSE                   # Licença MIT
 ├── run.py                    # Script principal
-├── dashboard.py              # Dashboard Streamlit (6 tabs)
+├── app.py                    # Ponto de entrada (HF Spaces)
+├── dashboard_gradio.py       # Dashboard Gradio (6 tabs)
 │
 ├── data/                     # Dados do projeto
 │   ├── raw/                  # Dataset original
@@ -316,10 +331,12 @@ human_recognition/
 
 ## 📊 Dashboard Interativo
 
-O dashboard foi desenvolvido com **Streamlit** e possui **6 abas (tabs)** para navegação organizada das funcionalidades. Acesse via:
+O dashboard foi desenvolvido com **Gradio** e possui **6 abas (tabs)** para navegação organizada das funcionalidades. Acesse via:
 
 ```bash
-streamlit run dashboard.py
+python app.py
+# ou
+python run.py --dashboard
 ```
 
 ### Tab 1: 📊 Métricas Gerais
@@ -520,7 +537,7 @@ streamlit run dashboard.py
 - **Features:** LBP (Local Binary Patterns)
 - **Modelos:** Random Forest, XGBoost, SVM, KNN, etc.
 - **Validação:** 5-fold Cross-Validation
-- **Framework:** Streamlit + OpenCV + scikit-learn
+- **Framework:** Gradio + OpenCV + scikit-learn
 
 ---
 
@@ -654,5 +671,5 @@ Distribuído sob a licença MIT.
 </p>
 
 <p align="center">
-  <strong>Versão:</strong> 1.1.0 &nbsp;|&nbsp; <strong>Última feature:</strong> Tab de Hiperparâmetros no Dashboard
+  <strong>Versão:</strong> 2.0.0 &nbsp;|&nbsp; <strong>Última feature:</strong> Migração para Gradio + Hugging Face Spaces
 </p>
