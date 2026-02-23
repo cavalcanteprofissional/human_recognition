@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.9+-blue.svg" alt="Python Version"/>
   <img src="https://img.shields.io/badge/OpenCV-4.8+-green.svg" alt="OpenCV"/>
-  <img src="https://img.shields.io/badge/Gradio-4.0+-orange.svg" alt="Gradio"/>
+  <img src="https://img.shields.io/badge/Streamlit-1.28+-red.svg" alt="Streamlit"/>
   <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License"/>
 </p>
 

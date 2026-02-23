@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Ponto de entrada para Hugging Face Spaces.
+Ponto de entrada para Streamlit Dashboard.
 """
 
-import gradio as gr
-from dashboard import build_interface
+import streamlit as st
+from streamlit_dashboard import main as dashboard_main, detector
 
 if __name__ == "__main__":
-    demo = build_interface()
-    demo.launch(
-        server_name="0.0.0.0",
-        server_port=7860,
-        inbrowser=True
+    st.set_page_config(
+        page_title="Human Recognition Dashboard",
+        page_icon="👤",
+        layout="wide"
     )
+    dashboard_main()

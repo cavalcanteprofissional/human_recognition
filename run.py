@@ -25,10 +25,10 @@ def setup_project():
     logger.info("Projeto configurado com sucesso!")
 
 def run_dashboard():
-    """Executa o dashboard Gradio."""
-    from dashboard_gradio import build_interface
-    demo = build_interface()
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    """Executa o dashboard Streamlit."""
+    import streamlit as st
+    from streamlit_dashboard import main as dashboard_main
+    dashboard_main()
 
 def run_advanced_training(models: str = None, cv_folds: int = 5, 
                          no_ensemble: bool = False, selection_metric: str = 'accuracy'):
