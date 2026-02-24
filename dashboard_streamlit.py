@@ -414,41 +414,103 @@ def main():
             st.warning("Selecione um relatório e um modelo")
     
     with tabs[3]:
-        st.header("Detecção de Imagem")
+        st.header("Detecção em Tempo Real")
         
         if detector.model:
             st.success("Modelo carregado com sucesso!")
         else:
             st.warning("Nenhum modelo encontrado. Execute o treinamento primeiro.")
         
-        col1, col2 = st.columns([2, 1])
+        col_source, col_filter = st.columns([1, 1])
         
-        with col1:
-            uploaded_file = st.file_uploader(
-                "Envie uma imagem",
-                type=['png', 'jpg', 'jpeg']
+        with col_source:
+            source_type = st.radio(
+                "Fonte",
+                ["📤 Upload de Imagem", "📷 Webcam", "📹 Câmera Yoosee"],
+                horizontal=True
             )
         
-        with col2:
+        with col_filter:
             filter_type = st.selectbox(
                 "Filtro",
                 ['none', 'cartoon', 'edges', 'colormap', 'stylized', 'pencil']
             )
         
-        if uploaded_file is not None:
-            file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-            image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+        if "Upload" in source_type:
+            st.divider()
+            st.subheader("Upload de Imagem")
+            uploaded_file = st.file_uploader(
+                "Envie uma imagem",
+                type=['png', 'jpg', 'jpeg'],
+                key="upload_file"
+            )
             
-            result_image, label, conf = detect_from_image(image, filter_type)
-            
-            if result_image is not None:
-                st.image(result_image, caption="Resultado", channels="RGB")
+            if uploaded_file is not None:
+                file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+                image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
                 
-                col_res1, col_res2 = st.columns(2)
-                with col_res1:
-                    st.metric("Classe", label)
-                with col_res2:
-                    st.metric("Confiança", conf)
+                result_image, label, conf = detect_from_image(image, filter_type)
+                
+                if result_image is not None:
+                    st.image(result_image, caption="Resultado", channels="RGB")
+                    
+                    col_res1, col_res2 = st.columns(2)
+                    with col_res1:
+                        st.metric("Classe", label)
+                    with col_res2:
+                        st.metric("Confiança", conf)
+        
+        elif "Webcam" in source_type:
+            st.divider()
+            st.subheader("Webcam")
+            
+            st.info("Para detecção contínua em tempo real, use: `python run.py --detect --source webcam`")
+            
+            camera_input = st.camera_input("Capture uma foto")
+            
+            if camera_input is not None:
+                file_bytes = np.asarray(bytearray(camera_input.read()), dtype=np.uint8)
+                image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+                
+                result_image, label, conf = detect_from_image(image, filter_type)
+                
+                if result_image is not None:
+                    st.image(result_image, caption="Resultado", channels="RGB")
+                    
+                    col_res1, col_res2 = st.columns(2)
+                    with col_res1:
+                        st.metric("Classe", label)
+                    with col_res2:
+                        st.metric("Confiança", conf)
+        
+        elif "Yoosee" in source_type:
+            st.divider()
+            st.subheader("Câmera Yoosee")
+            
+            col_ip, col_stream = st.columns(2)
+            with col_ip:
+                yoosee_ip = st.text_input("IP da Câmera", value=YOOSEE_CONFIG.get('ip', ''))
+            with col_stream:
+                yoosee_stream = st.selectbox(
+                    "Stream",
+                    ['onvif1', 'onvif2', 'live', 'stream11', 'h264'],
+                    index=0
+                )
+            
+            st.info("Para detecção contínua em tempo real com Yoosee, use:")
+            st.code(f"python run.py --detect --source yoosee --yoosee-ip {yoosee_ip or '192.168.x.x'}")
+            
+            use_proxy = st.checkbox("Usar proxy (recomendado)", value=True)
+            
+            if st.button("Testar Conexão"):
+                if yoosee_ip:
+                    st.info(f"Testando conexão com {yoosee_ip}...")
+                    st.warning("Execute o comando acima para detecção em tempo real")
+                else:
+                    st.error("Por favor, insira o IP da câmera")
+        
+        st.divider()
+        st.caption("💡 Para detecção em tempo real contínuo, use o comando: `python run.py --detect`")
     
     with tabs[4]:
         st.header("Análise Visual")
