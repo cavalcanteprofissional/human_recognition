@@ -27,7 +27,7 @@ def setup_project():
 def run_dashboard(framework: str = 'streamlit'):
     """Executa o dashboard Streamlit ou Gradio."""
     if framework == 'streamlit':
-        from streamlit import main as dashboard_main
+        from dashboard_app import main as dashboard_main
         dashboard_main()
     elif framework == 'gradio':
         from gradio import build_interface

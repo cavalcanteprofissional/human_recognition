@@ -171,7 +171,7 @@ def render_tab_metrics_fold(report_choice: str, model_choice: str):
     table_data = []
     for i in range(folds):
         table_data.append({
-            "Fold": i + 1,
+            "Fold": str(i + 1),
             "Accuracy": fold_metrics.get("accuracy", [0])[i],
             "Precision": fold_metrics.get("precision", [0])[i],
             "Recall": fold_metrics.get("recall", [0])[i],
@@ -181,7 +181,7 @@ def render_tab_metrics_fold(report_choice: str, model_choice: str):
     cv_m = model_data.get("cv_metrics", {})
     cv_std = model_data.get("cv_std", {})
     table_data.append({
-        "Fold": "Média",
+        "Fold": "Media",
         "Accuracy": cv_m.get("accuracy", 0),
         "Precision": cv_m.get("precision", 0),
         "Recall": cv_m.get("recall", 0),
