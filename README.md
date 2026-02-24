@@ -222,7 +222,8 @@ human_recognition/
 ├── LICENSE                   # Licença MIT
 ├── run.py                    # Script principal
 ├── app.py                    # Ponto de entrada (HF Spaces)
-├── dashboard_app.py         # Dashboard Streamlit (6 tabs)
+├── dashboard_streamlit.py  # Dashboard Streamlit (6 tabs)
+├── dashboard_gradio.py    # Dashboard Gradio (6 tabs)
 ├── gradio.py                 # Dashboard Gradio (6 tabs)
 │
 ├── data/                     # Dados do projeto
@@ -574,13 +575,13 @@ python run.py --compare-models
 ### 3. Executar Dashboard
 ```bash
 # Streamlit (padrão) - recomendado para local
-streamlit run dashboard_app.py
+streamlit run dashboard_streamlit.py
 # ou
 python run.py --dashboard
 python run.py --dashboard --dashboard-framework streamlit
 
 # Gradio - alternativo
-python gradio.py
+python dashboard_gradio.py
 python run.py --dashboard --dashboard-framework gradio
 ```
 
