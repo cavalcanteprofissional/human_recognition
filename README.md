@@ -549,7 +549,7 @@ python run.py --dashboard
 - **Features:** LBP (Local Binary Patterns)
 - **Modelos:** Random Forest, XGBoost, SVM, KNN, etc.
 - **Validação:** 5-fold Cross-Validation
-- **Framework:** Gradio + OpenCV + scikit-learn
+- **Framework:** Streamlit/Gradio + OpenCV + scikit-learn
 
 ---
 
