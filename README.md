@@ -429,22 +429,24 @@ python run.py --dashboard
 
 ### Tab 4: 🎥 Detecção em Tempo Real
 
-**Objetivo:** Executar detecção ao vivo com webcam ou câmera Yoosee.
+**Objetivo:** Executar detecção ao vivo com webcam, câmera Yoosee ou upload de imagem.
 
 | Elemento | Descrição |
 |----------|-----------|
-| **Carregar Modelo** | Botão para carregar modelo treinado |
-| **Stream de Vídeo** | Exibição do feed ao vivo com detecções |
+| **Carregar Modelo** | Carregado automaticamente se existir |
+| **Fonte de Vídeo** | Upload de Imagem, Webcam ou Câmera Yoosee |
 | **Seletor de Filtro** | Escolha entre 6 filtros visuais |
 | **Métricas Live** | Classe predita e confiança em tempo real |
-| **Histórico** | Últimas 10 detecções realizadas |
 
 **Fontes de Vídeo Disponíveis:**
 
 | Fonte | Descrição | Requisito |
 |-------|-----------|-----------|
-| Webcam | Câmera local do computador | OpenCV |
-| Yoosee | Câmera IP via RTSP/ONVIF | Configurar IP/senha |
+| 📤 Upload | Enviar arquivo de imagem | Arquivo PNG/JPG |
+| 📷 Webcam | Câmera local do computador | OpenCV |
+| 📹 Yoosee | Câmera IP via RTSP/ONVIF | Configurar IP/senha |
+
+**Nota:** Para detecção contínua em tempo real, use: `python run.py --detect`
 
 **Filtros Disponíveis:**
 
