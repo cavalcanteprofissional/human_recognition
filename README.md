@@ -1,3 +1,23 @@
+---
+title: Human Recognition Dashboard
+emoji: 👤
+colorFrom: blue
+colorTo: purple
+sdk: gradio
+sdk_version: 4.44.0
+python_version: "3.11"
+app_file: dashboard_gradio.py
+pinned: false
+license: mit
+short_description: Sistema de reconhecimento de silhueta humana usando LBP + ML
+tags:
+- computer-vision
+- machine-learning
+- human-detection
+- lbp
+- gradio
+---
+
 # Human Recognition Project
 
 <p align="center">
