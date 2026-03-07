@@ -17,6 +17,7 @@
 ## 📑 Sumário
 
 - [Sobre o Projeto](#-sobre-o-projeto)
+- [Local Binary Patterns (LBP)](#-local-binary-patterns-lbp)
 - [Fluxo de Dados](#-fluxo-de-dados)
 - [Origem do Dataset](#-origem-do-dataset)
 - [Começando](#-começando)
@@ -48,6 +49,110 @@ Este projeto implementa um sistema completo de reconhecimento de silhueta humana
 - Aplicar 6 filtros criativos diferentes para visualização estilizada
 - Visualizar métricas detalhadas em dashboard interativo com Gradio
 - Processamento paralelo para otimização de performance
+
+---
+
+## 🎯 Local Binary Patterns (LBP)
+
+### O que é LBP?
+
+O **Local Binary Patterns (LBP)** é um descritor de textura local ampliamente utilizado em visão computacional e reconhecimento de padrões. Criado por Ojala et al. (1996), o LBP é caracterizado por sua eficiência computacional e robustez a variações de iluminação monotônica, tornando-o ideal para aplicações de detecção em tempo real.
+
+### Como Funciona
+
+O algoritmo LBP opera em três etapas principais:
+
+**1. Vizinhança Circular**
+Para cada pixel da imagem, o LBP considera os pixels vizinhos dispostos em um círculo de raio `R`. O número de vizinhos é definido por `N` pontos.
+
+**2. Comparação Binária**
+Para cada vizinho:
+- Se o valor do vizinho ≥ pixel central → atribui **1**
+- Se o valor do vizinho < pixel central → atribui **0**
+
+**3. Código Binário**
+Os bits são concatenados formando um número binário de N bits, convertido para decimal. Este valor rotula o pixel central.
+
+#### Exemplo Visual
+
+```
+Vizinhança 3×3 (R=1, N=8):
+
+[85  32  26]      Pixel central: 50
+[61  50  9]  →   Threshold: vizinho ≥ 50 = 1
+[78  12  65]     Resultado: 11010010 (decimal: 210)
+```
+
+### Padrões Uniformes
+
+Para reduzir a dimensionalidade, o projeto utiliza o método **"uniform"**:
+
+- Conta-se o número de transições 0→1 ou 1→0 no padrão binário
+- Apenas padrões com **≤ 2 transições** são considerados "uniformes"
+- Padrões não-uniformes são agrupados em um único bin
+
+| Parâmetro | Valor no Projeto | Descrição |
+|-----------|------------------|------------|
+| `radius` | 1 | Raio da vizinhança circular |
+| `n_points` | 8 | Número de pontos na vizinhança |
+| `method` | "uniform" | Método de quantização |
+| **Features** | **59** | n_points + 2 = 8 + 2 = 10 bins |
+
+### Por que LBP para Detecção de Silhueta?
+
+A detecção de silhueta humana se beneficia do LBP porque:
+
+1. **Invariância a Iluminação**: Mudanças monotônicas de brilho não afetam o padrão LBP, pois apenas a relação de ordem entre pixels importa.
+
+2. **Descrição de Textura**: Silhuetas humanas possuem padrões de textura característicos que o LBP captura eficientemente.
+
+3. **Baixo Custo Computacional**: A extração é rápida, permitindo processamento em tempo real (~30 FPS na webcam).
+
+4. **Robustez**: O histograma final é tolerante a pequenas translações e rotações.
+
+### Implementação no Projeto
+
+O código está localizado em `src/feature_extractor.py`:
+
+```python
+from skimage.feature import local_binary_pattern
+
+lbp = local_binary_pattern(
+    image,          # Imagem em escala de cinza
+    n_points=8,      # 8 vizinhos
+    radius=1,       # raio = 1
+    method='uniform'
+)
+
+# Histograma normalizado = vetor de características (59 features)
+hist = np.histogram(lbp, bins=np.arange(0, 61))[0]
+hist_norm = hist / (hist.sum() + 1e-6)
+```
+
+### Paralelização
+
+A extração de features é paralelizada usando `joblib.Parallel`:
+
+```python
+results = Parallel(n_jobs=-1, prefer="processes")(
+    delayed(self._extract_single)(img_path) 
+    for img_path in image_paths
+)
+```
+
+| Componente | Implementação |
+|------------|---------------|
+| Extração LBP | `joblib.Parallel` com todos os cores |
+| Speedup esperado | 2-4x em máquinas multi-core |
+
+### Vantagens e Desvantagens
+
+| Vantagens | Desvantagens |
+|-----------|---------------|
+| Invariância a iluminação | Sensível a rotações significativas |
+| Baixo custo computacional | Pode perder informações em escalas muito diferentes |
+| Boa descrição de texturas | Requer imagens com contraste suficiente |
+| Histograma compacto (59 features) | Não captura informação espacial global |
 
 ---
 
