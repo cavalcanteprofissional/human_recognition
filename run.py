@@ -9,16 +9,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-from src.data_loader import HumanDatasetLoader
-from src.train import main as train_main
-from src.real_time_detector import main as detect_main
-from src.utils import plot_training_results, create_sample_comparison
-
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 def setup_project():
     """Configura o projeto baixando e preparando os dados."""
+    from src.data_loader import HumanDatasetLoader
     logger.info("Configurando projeto...")
     loader = HumanDatasetLoader()
     data = loader.load_data()
@@ -47,6 +43,7 @@ def run_advanced_training(models: str = None, cv_folds: int = 5,
         no_ensemble: Se True, não cria ensemble
         selection_metric: Métrica para selecionar o melhor modelo
     """
+    from src.data_loader import HumanDatasetLoader
     from src.train_advanced import AdvancedTrainer
     from src.model_registry import ModelRegistry
     from src.feature_extractor import LBPFeatureExtractor
@@ -222,6 +219,7 @@ def main():
     
     # Treinamento básico
     if args.train:
+        from src.train import main as train_main
         train_main()
     
     # Treinamento avançado
@@ -255,9 +253,11 @@ def main():
     
     # Análise
     if args.analyze:
+        from src.utils import plot_training_results
         plot_training_results(Path(args.analyze))
     
     if args.compare_filters:
+        from src.utils import create_sample_comparison
         create_sample_comparison()
     
     if not any(vars(args).values()):

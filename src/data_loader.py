@@ -152,7 +152,7 @@ class HumanDatasetLoader:
         for label in [0, 1]:
             class_dir = self.processed_path / ("no_human" if label == 0 else "human")
             for img_path in class_dir.glob("*.png"):
-                image_paths.append(str(img_path))
+                image_paths.append(str(img_path.relative_to(self.processed_path)))
                 labels.append(label)
         
         # Converter para arrays
@@ -212,10 +212,14 @@ class HumanDatasetLoader:
         # Carregar splits
         data = np.load(splits_path)
         
+        # Converter paths relativos para absolutos
+        def resolve_paths(arr):
+            return np.array([str(self.processed_path / p) for p in arr])
+        
         return {
-            "train": (data['X_train'], data['y_train']),
-            "val": (data['X_val'], data['y_val']),
-            "test": (data['X_test'], data['y_test'])
+            "train": (resolve_paths(data['X_train']), data['y_train']),
+            "val": (resolve_paths(data['X_val']), data['y_val']),
+            "test": (resolve_paths(data['X_test']), data['y_test'])
         }
 
 # Exemplo de uso
